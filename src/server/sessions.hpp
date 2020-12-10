@@ -7,33 +7,50 @@
 
 #include <boost/asio.hpp>
 #include "../utils/logger.hpp"
+#include "session.pb.h"
 
 namespace srp {
   using boost::asio::ip::tcp;
 
-  enum class session_type {
-    undefined = 0,
-    ui = 1,
-    client = 2,
-  };
-
-  session_type session_type_from_raw(auto type_id){
-    switch (type_id){
-      case 1: return session_type::ui;
-      case 2: return session_type::client;
-      default: return session_type::undefined;
+  class SessionInfo {
+  public:
+    static std::string_view session_type_str(SessionType t) {
+      return SessionType_descriptor()->FindValueByNumber(t)->name();
     }
-  }
+  };
 
   class base_session : public std::enable_shared_from_this<base_session> {
   public:
-    explicit base_session(tcp::socket socket) : socket_{std::move(socket)} {
-      LOGD << "Create base session with " << socket_.remote_endpoint().address() << std::endl;
+    static auto create_session(tcp::socket socket) {
+      class constructor: public base_session{
+      public:
+        explicit constructor(tcp::socket soc): base_session(std::move(soc)){}
+      };
+      return std::make_shared<constructor>(std::move(socket));
     }
 
-    session_type get_type();
+    decltype(auto) remote_address() const {
+      return socket_.remote_endpoint().address();
+    }
+
+    SessionType get_type();
+    std::optional<SessionType> const& get_type() const;
+
+    ~base_session();
+
+  protected:
+    explicit base_session(tcp::socket socket) : socket_{std::move(socket)} {
+      LOGD << "Create base session with " << socket_.remote_endpoint().address();
+    }
 
   private:
+    enum class connection_code{
+      disconnect = 99
+    };
+
+    void fetch_type();
+
+    std::optional<SessionType> type_{};
     tcp::socket socket_;
   };
 }

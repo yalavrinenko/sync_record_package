@@ -10,10 +10,20 @@ set(SERVER_LIBS)
 set( Boost_NO_SYSTEM_PATHS on CACHE BOOL "Do not search system for Boost" )
 find_package(Boost COMPONENTS log log_setup system REQUIRED)
 
-set(SERVER_INCLUDES ${TARGET_INCLUDES} Boost::headers)
-set(SERVER_LIBS ${SERVER_LIBS} Boost::log Boost::log_setup Boost::thread Boost::system)
+find_package(Protobuf REQUIRED)
+set(Protobuf_IMPORT_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/src/protocols")
 
-set(SERVER_SRC src/server/server.cpp src/server/control_server.cpp src/server/sessions.cpp src/server/sessions.hpp)
+set(SERVER_INCLUDES ${TARGET_INCLUDES} Boost::headers ${Protobuf_INCLUDE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+set(SERVER_LIBS ${SERVER_LIBS} Boost::log Boost::log_setup Boost::thread Boost::system protobuf::libprotobuf)
+
+protobuf_generate_cpp(SESSION_PROTO_SRCS SESSION_PROTO_HDRS ./src/protocols/session.proto)
+
+set(SERVER_SRC ${SESSION_PROTO_SRCS}
+        src/server/server.cpp
+        src/server/control_server.cpp
+        src/server/sessions.cpp
+        src/server/sessions.hpp)
+
 set(SERVER_TARGET sync_server)
 
 add_executable(${SERVER_TARGET} ${SERVER_SRC})

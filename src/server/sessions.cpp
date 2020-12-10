@@ -3,17 +3,31 @@
 //
 
 #include "sessions.hpp"
+#include "../utils/io.hpp"
+srp::SessionType srp::base_session::get_type() {
+  if (!type_)
+    fetch_type();
 
-srp::session_type srp::base_session::get_type() {
-  uint8_t type;
-  boost::system::error_code ecode;
-  boost::asio::read(socket_, boost::asio::buffer(&type, sizeof(type)), ecode);
+  return type_.value();
+}
 
-  if (!ecode){
-    LOGW << "Unable to read connection type from " << socket_.remote_endpoint().address().to_string() << ". Reason: "
-         << ecode.message();
-    return session_type::undefined;
+srp::base_session::~base_session() {
+  if (socket_.is_open()){
+    auto code = static_cast<int>(connection_code::disconnect);
+    socket_.write_some(boost::asio::buffer(&code, sizeof(code)));
   }
+}
 
-  return session_type_from_raw(type);
+void srp::base_session::fetch_type() {
+  type_ = SessionType::undefined;
+  auto welcome = NetUtils::sync_read_proto<ClientWelcomeMessage>(socket_);
+  if (!welcome){
+    LOGW << "Unable to read connection type from " << socket_.remote_endpoint().address().to_string();
+  } else {
+    type_ = welcome.value().type();
+  }
+}
+
+std::optional<srp::SessionType> const& srp::base_session::get_type() const {
+  return type_;
 }

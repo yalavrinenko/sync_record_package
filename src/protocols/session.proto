@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package srp;
+
+enum SessionType{
+    undefined = 0;
+    ui = 1;
+    client = 2;
+}
+
+message ClientWelcomeMessage{
+    SessionType type = 1;
+}
