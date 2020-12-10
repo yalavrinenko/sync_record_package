@@ -71,6 +71,8 @@ namespace srp {
 
     void stop() override;
 
+    ~control_server();
+
   private:
     connection_point const &local_endpoint_;
     std::unique_ptr<server_acceptor> acceptor_ = nullptr;

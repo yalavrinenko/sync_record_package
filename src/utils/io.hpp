@@ -5,6 +5,7 @@
 #ifndef SRP_IO_HPP
 #define SRP_IO_HPP
 
+#include "logger.hpp"
 #include <boost/asio.hpp>
 
 namespace srp {
