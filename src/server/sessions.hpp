@@ -53,6 +53,8 @@ namespace srp {
     std::optional<SessionType> type_{};
     tcp::socket socket_;
   };
+
+  using session_builder = std::function<void(std::shared_ptr<base_session> raw_session)>;
 }
 
 #endif //SRP_SESSIONS_HPP

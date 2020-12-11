@@ -22,7 +22,7 @@ protobuf_generate_cpp(SESSION_PROTO_SRCS SESSION_PROTO_HDRS ./src/protocols/sess
 set(SERVER_SRC ${SESSION_PROTO_SRCS}
         src/server/control_server.cpp
         src/server/sessions.cpp
-        src/server/sessions.hpp)
+        src/server/sessions.hpp src/server/server_acceptor.cpp)
 
 set(SERVER_TARGET_LIB srp_server)
 
@@ -38,5 +38,18 @@ target_link_libraries(${SERVER_TARGET} ${SERVER_TARGET_LIB})
 target_include_directories(${SERVER_TARGET} PUBLIC ${SERVER_INCLUDES})
 
 set(SERVER_TESTS_SRC tests/server_test.cpp)
-add_executable(server_test_entry ${SERVER_TESTS_SRC})
-target_link_libraries(server_test_entry ${SERVER_TARGET_LIB} Boost::unit_test_framework)
+
+add_executable(server_test_entry_address ${SERVER_TESTS_SRC})
+target_link_libraries(server_test_entry_address ${SERVER_TARGET_LIB} Boost::unit_test_framework)
+target_compile_options(server_test_entry_address PRIVATE -fsanitize=address)
+target_link_options(server_test_entry_address PRIVATE -fsanitize=address)
+
+add_executable(server_test_entry_threads ${SERVER_TESTS_SRC})
+target_link_libraries(server_test_entry_threads ${SERVER_TARGET_LIB} Boost::unit_test_framework)
+target_compile_options(server_test_entry_threads PRIVATE -fsanitize=thread)
+target_link_options(server_test_entry_threads PRIVATE -fsanitize=thread)
+
+add_executable(server_test_entry_ub ${SERVER_TESTS_SRC})
+target_link_libraries(server_test_entry_ub ${SERVER_TARGET_LIB} Boost::unit_test_framework)
+target_compile_options(server_test_entry_ub PRIVATE -fsanitize=undefined)
+target_link_options(server_test_entry_ub PRIVATE -fsanitize=undefined)
