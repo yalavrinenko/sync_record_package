@@ -22,7 +22,8 @@ protobuf_generate_cpp(SESSION_PROTO_SRCS SESSION_PROTO_HDRS ./src/protocols/sess
 set(SERVER_SRC ${SESSION_PROTO_SRCS}
         src/server/control_server.cpp
         src/server/sessions.cpp
-        src/server/sessions.hpp src/server/server_acceptor.cpp)
+        src/server/sessions.hpp src/server/server_acceptor.cpp
+        src/server/rec_client.cpp src/server/rec_client.hpp)
 
 set(SERVER_TARGET_LIB srp_server)
 
@@ -37,19 +38,25 @@ add_executable(${SERVER_TARGET}  src/server/server.cpp)
 target_link_libraries(${SERVER_TARGET} ${SERVER_TARGET_LIB})
 target_include_directories(${SERVER_TARGET} PUBLIC ${SERVER_INCLUDES})
 
-set(SERVER_TESTS_SRC tests/server_test.cpp)
+function(create_test_set test_name source_file)
+    add_executable(${test_name} ${source_file})
+    target_link_libraries(${test_name} ${SERVER_TARGET_LIB} Boost::unit_test_framework)
 
-add_executable(server_test_entry_address ${SERVER_TESTS_SRC})
-target_link_libraries(server_test_entry_address ${SERVER_TARGET_LIB} Boost::unit_test_framework)
-target_compile_options(server_test_entry_address PRIVATE -fsanitize=address)
-target_link_options(server_test_entry_address PRIVATE -fsanitize=address)
+    add_executable(${test_name}_address ${source_file})
+    target_link_libraries(${test_name}_address ${SERVER_TARGET_LIB} Boost::unit_test_framework)
+    target_compile_options(${test_name}_address PRIVATE -fsanitize=address)
+    target_link_options(${test_name}_address PRIVATE -fsanitize=address)
 
-add_executable(server_test_entry_threads ${SERVER_TESTS_SRC})
-target_link_libraries(server_test_entry_threads ${SERVER_TARGET_LIB} Boost::unit_test_framework)
-target_compile_options(server_test_entry_threads PRIVATE -fsanitize=thread)
-target_link_options(server_test_entry_threads PRIVATE -fsanitize=thread)
+    add_executable(${test_name}_threads ${source_file})
+    target_link_libraries(${test_name}_threads ${SERVER_TARGET_LIB} Boost::unit_test_framework)
+    target_compile_options(${test_name}_threads PRIVATE -fsanitize=thread)
+    target_link_options(${test_name}_threads PRIVATE -fsanitize=thread)
 
-add_executable(server_test_entry_ub ${SERVER_TESTS_SRC})
-target_link_libraries(server_test_entry_ub ${SERVER_TARGET_LIB} Boost::unit_test_framework)
-target_compile_options(server_test_entry_ub PRIVATE -fsanitize=undefined)
-target_link_options(server_test_entry_ub PRIVATE -fsanitize=undefined)
+    add_executable(${test_name}_ub ${source_file})
+    target_link_libraries(${test_name}_ub ${SERVER_TARGET_LIB} Boost::unit_test_framework)
+    target_compile_options(${test_name}_ub PRIVATE -fsanitize=undefined)
+    target_link_options(${test_name}_ub PRIVATE -fsanitize=undefined)
+endfunction()
+
+create_test_set(server_test_entry tests/server_test.cpp)
+create_test_set(client_test_entry tests/client_test.cpp)

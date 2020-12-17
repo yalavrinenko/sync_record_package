@@ -20,7 +20,7 @@ namespace srp {
   class server_acceptor {
   public:
     server_acceptor(boost::asio::io_service &io_service, const tcp::endpoint &end_point)
-        : acceptor_{io_service, end_point}, socket_{io_service}, is_active_{true} {
+        : io_service_{io_service}, acceptor_{io_service, end_point}, is_active_{true} {
       if (acceptor_.is_open()) LOGD << "Create server acceptor at " << info();
       else {
         LOGE << "Unable to start client acceptor at " << info();
@@ -35,7 +35,7 @@ namespace srp {
     void stop();
 
   protected:
-    void process_connection();
+    void process_connection(std::shared_ptr<base_session> session);
 
     std::string info() const {
       using namespace std::string_literals;
@@ -45,8 +45,9 @@ namespace srp {
   private:
     void accept_connection();
 
+    boost::asio::io_service &io_service_;
+
     tcp::acceptor acceptor_;
-    tcp::socket socket_;
     std::atomic<bool> is_active_;
     std::unordered_map<SessionType, session_builder> builder_callbacks_;
   };

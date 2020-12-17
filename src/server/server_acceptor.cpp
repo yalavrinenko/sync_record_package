@@ -27,9 +27,11 @@ namespace srp{
   }
 
   void server_acceptor::accept_connection() {
-    auto accept_function = [this](boost::system::error_code ecode) {
+    auto session = base_session::create_session(this->io_service_);
+
+    auto accept_function = [this, raw_session = session](boost::system::error_code ecode) {
       if (!ecode) {
-        process_connection();
+        process_connection(std::move(raw_session));
       } else if (ecode) {
         LOGW << "Fail to accept connection. Reason: " << ecode.message();
       }
@@ -38,14 +40,16 @@ namespace srp{
     };
 
     if (is_active_)
-      acceptor_.async_accept(socket_, accept_function);
+      acceptor_.async_accept(session->socket(), accept_function);
   }
 
-  void server_acceptor::process_connection() {
-    auto session_ptr = base_session::create_session(std::move(socket_));
+  void server_acceptor::process_connection(std::shared_ptr<base_session> raw_session) {
+    auto session_ptr = base_session::create_session(std::move(raw_session->socket()));
+    raw_session.reset();
     auto client_type = session_ptr->get_type();
     LOGD << "Accept connection from " << session_ptr->remote_address() << " client type " << static_cast<int>(client_type);
-    if (builder_callbacks_.contains(client_type)) std::invoke(builder_callbacks_[client_type], std::move(session_ptr));
+    if (builder_callbacks_.contains(client_type))
+      std::invoke(builder_callbacks_[client_type], std::move(session_ptr));
     else
       LOGW << "Unknown client type: " << SessionInfo::session_type_str(client_type);
   }

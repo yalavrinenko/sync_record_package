@@ -68,6 +68,7 @@ BOOST_AUTO_TEST_CASE(Single_connection) {
   {
     std::unique_ptr<Client> c;
     BOOST_CHECK_NO_THROW(c = std::make_unique<Client>(14488));
+    std::this_thread::sleep_for(1s);
   }
 
   BOOST_CHECK_NO_THROW(srv.stop());

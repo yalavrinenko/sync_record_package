@@ -11,3 +11,21 @@ enum SessionType{
 message ClientWelcomeMessage{
     SessionType type = 1;
 }
+
+enum ActionType{
+    registration = 0;
+    check_device = 1;
+    start = 2;
+    stop = 3;
+    sync_time = 4;
+    disconnect = 99;
+}
+
+message ClientActionMessage{
+    ActionType action = 1;
+    bytes meta = 2;
+}
+
+message ClientRegistrationMessage{
+    uint64 uid = 1;
+}

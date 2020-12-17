@@ -60,7 +60,7 @@ namespace srp {
       boost::asio::read(socket, boost::asio::buffer(buffer), ecode);
 
       if (ecode){
-        LOGW << "Unable to read from " << socket.remote_endpoint().address().to_string() << ". Reason: "
+        LOGW << "Unable to read from socket" << ". Reason: "
              << ecode.message();
         return false;
       }
@@ -102,7 +102,7 @@ namespace srp {
       boost::asio::write(socket, boost::asio::buffer(buffer), ecode);
 
       if (ecode){
-        LOGW << "Fail to write to socket " << socket.remote_endpoint().address().to_string() << ". Reason: "
+        LOGW << "Fail to write to socket" << ". Reason: "
              << ecode.message();
         return false;
       }
