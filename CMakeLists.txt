@@ -32,7 +32,6 @@ target_link_libraries(${SERVER_TARGET_LIB} ${SERVER_LIBS})
 target_include_directories(${SERVER_TARGET_LIB} PUBLIC ${SERVER_INCLUDES})
 target_compile_definitions(${SERVER_TARGET_LIB} PUBLIC "-DBOOST_ALL_DYN_LINK -DBOOST_LOG_USE_CHAR")
 
-
 set(SERVER_TARGET sync_server)
 add_executable(${SERVER_TARGET}  src/server/server.cpp)
 target_link_libraries(${SERVER_TARGET} ${SERVER_TARGET_LIB})
