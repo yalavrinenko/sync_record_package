@@ -18,12 +18,13 @@ namespace srp{
     recording_client() = delete;
     void init(size_t uid) override;
 
-    ClientStartRecordResponse start_recording(std::string const &path_template) override;
-    ClientStopRecordResponse stop_recording() override;
+    std::optional<ClientResponse> start_recording(std::string const &path_template) override;
 
-    ClientSyncResponse sync_time(size_t sync_point) override;
+    std::optional<ClientResponse> stop_recording() override;
 
-    ClientCheckResponse check() override;
+    std::optional<ClientResponse> sync_time(size_t sync_point) override;
+
+    std::optional<ClientResponse> check() override;
 
     virtual bool is_connected();
 

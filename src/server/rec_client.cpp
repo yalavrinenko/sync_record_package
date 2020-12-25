@@ -34,24 +34,24 @@ namespace srp {
       session_->send_message(ActionMessageBuilder::register_client(uid));
     }
 
-    std::optional<ClientCheckResponse> send_check_message(){
+    std::optional<ClientResponse> send_check_message(){
       session_->send_message(ActionMessageBuilder::check_client());
-      return wait_response<ClientCheckResponse>();
+      return session_->receive_message<ClientResponse>();
     }
 
-    std::optional<ClientStartRecordResponse> send_start_message(std::string const &path_template) {
+    std::optional<ClientResponse> send_start_message(std::string const &path_template) {
       session_->send_message(ActionMessageBuilder::start_message(path_template));
-      return wait_response<ClientStartRecordResponse>();
+      return session_->receive_message<ClientResponse>();
     }
 
-    std::optional<ClientStopRecordResponse> send_stop_message(){
+    std::optional<ClientResponse> send_stop_message(){
       session_->send_message(ActionMessageBuilder::stop_message());
-      return wait_response<ClientStopRecordResponse>();
+      return session_->receive_message<ClientResponse>();
     }
 
-    std::optional<ClientSyncResponse> send_sync_signal(size_t sync_point){
+    std::optional<ClientResponse> send_sync_signal(size_t sync_point){
       session_->send_message(ActionMessageBuilder::sync_message(sync_point));
-      return wait_response<ClientSyncResponse>();
+      return session_->receive_message<ClientResponse>();
     }
 
     std::shared_ptr<srp::base_session> session_;
@@ -70,23 +70,23 @@ namespace srp {
   }
 
   void recording_client::init(size_t uid) {
+    uid_ = uid;
     pimpl_->send_register_message(uid);
   }
 
-  ClientCheckResponse recording_client::check() {
-    return pimpl_->send_check_message().value();
+  std::optional<ClientResponse> recording_client::check() {
+    return pimpl_->send_check_message();
   }
 
-  ClientStartRecordResponse recording_client::start_recording(std::string const &path_template) {
-    return pimpl_->send_start_message(path_template).value();
+  std::optional<ClientResponse> recording_client::start_recording(std::string const &path_template) {
+    return pimpl_->send_start_message(path_template);
   }
-  ClientStopRecordResponse recording_client::stop_recording() {
-    return pimpl_->send_stop_message().value();
+  std::optional<ClientResponse> recording_client::stop_recording() {
+    return pimpl_->send_stop_message();
   }
-  ClientSyncResponse recording_client::sync_time(size_t sync_point) {
-    return pimpl_->send_sync_signal(sync_point).value();
+  std::optional<ClientResponse> recording_client::sync_time(size_t sync_point) {
+    return pimpl_->send_sync_signal(sync_point);
   }
-
 
   bool recording_client::is_connected() {
     return pimpl_->session_->is_active();

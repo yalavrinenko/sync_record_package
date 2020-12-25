@@ -80,7 +80,6 @@ namespace srp {
       return {};
     }
 
-
     ~base_session();
 
   protected:
