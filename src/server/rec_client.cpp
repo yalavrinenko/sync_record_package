@@ -12,8 +12,46 @@ namespace srp {
     explicit recording_client_impl(std::shared_ptr<srp::base_session> session) : session_{std::move(session)} {
     }
 
+    template<typename response_t>
+    std::optional<response_t> wait_response(){
+      auto resp = session_->receive_message<ClientResponse>();
+      if (resp) {
+        response_t check_status;
+        if (check_status.ParseFromString(resp.value().data()))
+          return check_status;
+        else {
+          LOGW << "Fail to parse income check message.";
+          return {};
+        }
+      }
+
+      LOGW << "Fail to receive income message.";
+      return {};
+    }
+
     void send_register_message(size_t uid){
+      LOGD << "Try to register client " << uid;
       session_->send_message(ActionMessageBuilder::register_client(uid));
+    }
+
+    std::optional<ClientCheckResponse> send_check_message(){
+      session_->send_message(ActionMessageBuilder::check_client());
+      return wait_response<ClientCheckResponse>();
+    }
+
+    std::optional<ClientStartRecordResponse> send_start_message(std::string const &path_template) {
+      session_->send_message(ActionMessageBuilder::start_message(path_template));
+      return wait_response<ClientStartRecordResponse>();
+    }
+
+    std::optional<ClientStopRecordResponse> send_stop_message(){
+      session_->send_message(ActionMessageBuilder::stop_message());
+      return wait_response<ClientStopRecordResponse>();
+    }
+
+    std::optional<ClientSyncResponse> send_sync_signal(size_t sync_point){
+      session_->send_message(ActionMessageBuilder::sync_message(sync_point));
+      return wait_response<ClientSyncResponse>();
     }
 
     std::shared_ptr<srp::base_session> session_;
@@ -35,18 +73,24 @@ namespace srp {
     pimpl_->send_register_message(uid);
   }
 
-  void recording_client::check() {}
+  ClientCheckResponse recording_client::check() {
+    return pimpl_->send_check_message().value();
+  }
 
-  void recording_client::start_recording() {}
-  void recording_client::stop_recording() {}
-  void recording_client::sync_time() {}
+  ClientStartRecordResponse recording_client::start_recording(std::string const &path_template) {
+    return pimpl_->send_start_message(path_template).value();
+  }
+  ClientStopRecordResponse recording_client::stop_recording() {
+    return pimpl_->send_stop_message().value();
+  }
+  ClientSyncResponse recording_client::sync_time(size_t sync_point) {
+    return pimpl_->send_sync_signal(sync_point).value();
+  }
 
 
   bool recording_client::is_connected() {
     return pimpl_->session_->is_active();
   }
-
-
 
   recording_client::~recording_client() = default;
 }

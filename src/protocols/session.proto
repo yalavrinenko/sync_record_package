@@ -13,11 +13,12 @@ message ClientWelcomeMessage{
 }
 
 enum ActionType{
-    registration = 0;
-    check_device = 1;
-    start = 2;
-    stop = 3;
-    sync_time = 4;
+    unknown = 0;
+    registration = 1;
+    check_device = 2;
+    start = 3;
+    stop = 4;
+    sync_time = 5;
     disconnect = 99;
 }
 
@@ -28,4 +29,41 @@ message ClientActionMessage{
 
 message ClientRegistrationMessage{
     uint64 uid = 1;
+}
+
+message ClientResponse{
+    uint64 uid = 1;
+    ActionType trigger_action = 2;
+    bytes data = 3;
+}
+
+message ClientCheckResponse{
+    bool check_ok = 1;
+    string info = 2;
+}
+
+message ClientStartRecord{
+    string path_pattern = 1;
+}
+
+message ClientStartRecordResponse{
+    repeated string data_path = 1;
+    repeated string sync_point_path = 2;
+}
+
+message ClientStopRecordResponse{
+    double duration_sec = 1;
+    double average_fps = 2;
+    uint64 frames = 3;
+}
+
+message ClientSync{
+    uint64 sync_point = 1;
+}
+
+message ClientSyncResponse{
+    uint64 sync_point = 1;
+    double duration_sec = 2;
+    double average_fps = 3;
+    uint64 frames = 4;
 }

@@ -7,6 +7,8 @@
 
 #include <memory>
 #include "../capture_interface/capture.hpp"
+#include <session.pb.h>
+
 namespace srp{
 
   class base_session;
@@ -15,10 +17,13 @@ namespace srp{
   public:
     recording_client() = delete;
     void init(size_t uid) override;
-    void start_recording() override;
-    void stop_recording() override;
-    void sync_time() override;
-    void check() override;
+
+    ClientStartRecordResponse start_recording(std::string const &path_template) override;
+    ClientStopRecordResponse stop_recording() override;
+
+    ClientSyncResponse sync_time(size_t sync_point) override;
+
+    ClientCheckResponse check() override;
 
     virtual bool is_connected();
 

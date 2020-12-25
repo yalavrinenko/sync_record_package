@@ -9,12 +9,12 @@ namespace srp {
   public:
     virtual void init(size_t uid) = 0;
 
-    virtual void check() = 0;
+    virtual ClientCheckResponse check() = 0;
 
-    virtual void start_recording() = 0;
-    virtual void stop_recording() = 0;
+    virtual ClientStartRecordResponse start_recording(std::string const &path_template) = 0;
+    virtual ClientStopRecordResponse stop_recording() = 0;
 
-    virtual void sync_time() = 0;
+    virtual ClientSyncResponse sync_time(size_t sync_point) = 0;
   };
 }
 #endif//SRP_CAPTURE_HPP

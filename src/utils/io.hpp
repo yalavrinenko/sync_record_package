@@ -9,6 +9,9 @@
 #include <boost/asio.hpp>
 
 namespace srp {
+  class message_parse_error : public std::exception{
+  };
+
   struct NetUtils {
 
     struct IoParameters{
@@ -130,6 +133,17 @@ namespace srp {
       return true;
     }
 
+  };
+
+  struct ProtoUtils{
+    template<typename message_t>
+    static message_t message_from_bytes(auto const& data){
+      message_t m;
+      if (m.ParseFromString(data))
+        return m;
+      else
+        throw message_parse_error();
+    }
   };
 };
 
