@@ -19,7 +19,9 @@ namespace srp {
     virtual bool receive_message(google::protobuf::MessageLite* message) = 0;
     virtual bool is_alive() = 0;
     virtual std::string commutator_info() = 0;
+    virtual void terminate() = 0;
     virtual ~communication_i() = default;
+
   };
 }
 

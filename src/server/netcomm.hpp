@@ -16,6 +16,7 @@ namespace srp{
     bool receive_message(google::protobuf::MessageLite *message) override;
     bool is_alive() override;
     std::string commutator_info() override;
+    void terminate() override;
     ~netcomm() override;
 
   protected:

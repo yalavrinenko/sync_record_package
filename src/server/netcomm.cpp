@@ -1,28 +1,49 @@
 //
 // Created by yalavrinenko on 29.12.2020.
 //
+#include "../utils/logger.hpp"
 #include "netcomm.hpp"
 #include <google/protobuf/util/delimited_message_util.h>
 struct srp::netcomm::netcomm_impl{
   boost::asio::ip::tcp::iostream tcp_stream;
-  google::protobuf::io::IstreamInputStream proto_istream;
-  bool istream_eof = false;
-
-  explicit netcomm_impl(boost::asio::ip::tcp::socket socket): tcp_stream{std::move(socket)}, proto_istream(&tcp_stream){
+  explicit netcomm_impl(boost::asio::ip::tcp::socket socket): tcp_stream{std::move(socket)}{
   }
 
   bool send_message(google::protobuf::MessageLite const* message) {
-    google::protobuf::util::SerializeDelimitedToOstream(*message, &tcp_stream);
-    tcp_stream.flush();
-    return bool(tcp_stream);
+    u_int64_t message_size = message->ByteSizeLong();
+    std::string message_string;
+    if (message->SerializeToString(&message_string)) {
+      tcp_stream << message_size << message_string;
+      tcp_stream.flush();
+      return bool(tcp_stream);
+    } else {
+      LOGW << "Unable to serialize message";
+      return false;
+    }
   }
 
   bool recieve_message(google::protobuf::MessageLite *message){
-    return google::protobuf::util::ParseDelimitedFromZeroCopyStream(message, &proto_istream, &istream_eof);
+    u_int64_t message_size;
+    if (tcp_stream >> message_size){
+      std::vector<char> buffer(message_size);
+      auto extracted = tcp_stream.readsome(buffer.data(), message_size);
+      if (extracted == static_cast<long>(message_size)){
+        if (message->ParsePartialFromArray(buffer.data(), message_size)){
+          return true;
+        } else {
+          LOGW << "Fail to parse income data";
+        }
+      } else {
+        LOGW << "Read " << extracted << " bytes but expected " << message_size;
+      }
+    } else {
+      LOGW << "Fail to read message size. Reason: " << tcp_stream.error().message();
+    }
+    return false;
   }
 
   bool is_alive() const {
-    return tcp_stream || !istream_eof;
+    return bool(tcp_stream);
   }
 
   auto address() {
@@ -37,6 +58,10 @@ struct srp::netcomm::netcomm_impl{
       return std::to_string(tcp_stream.socket().remote_endpoint().port());
     else
       return std::string{"Unknown"};
+  }
+
+  void terminate() {
+    //tcp_stream.expires_after(std::chrono::milliseconds(10));
   }
 };
 
@@ -54,6 +79,9 @@ std::string srp::netcomm::commutator_info() {
 }
 
 srp::netcomm::netcomm(boost::asio::ip::tcp::socket socket): pimpl_{std::make_unique<srp::netcomm::netcomm_impl>(std::move(socket))} {
+}
+void srp::netcomm::terminate() {
+  pimpl_->terminate();
 }
 
 srp::netcomm::~netcomm() = default;

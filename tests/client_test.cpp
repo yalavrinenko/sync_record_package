@@ -5,13 +5,13 @@
 #define BOOST_TEST_DYN_LINK
 
 #include "../src/protocols/actions.hpp"
+#include "../src/server/netcomm.hpp"
 #include "../src/server/rec_client.hpp"
 #include "../src/server/sessions.hpp"
 #include <boost/asio.hpp>
 #include <boost/bind/bind.hpp>
 #include <boost/test/unit_test.hpp>
 #include <google/protobuf/util/json_util.h>
-#include "../src/server/netcomm.hpp"
 #include <unordered_map>
 using boost::asio::ip::tcp;
 using namespace srp;
@@ -104,7 +104,7 @@ class session {
 public:
   explicit session(tcp::socket socket_) : ios_(new srp::netcomm(std::move(socket_))) {}
 
-  auto& stream() { return ios_; }
+  auto &stream() { return ios_; }
 
   void start() {
     sync_read_thread_ = std::async(std::launch::async, [this]() { this->sync_read(); });
@@ -142,8 +142,7 @@ public:
 private:
   void start_accept() {
     struct socket_handler {
-      explicit socket_handler(boost::asio::io_service &ios): socket(ios){
-      }
+      explicit socket_handler(boost::asio::io_service &ios) : socket(ios) {}
       boost::asio::ip::tcp::socket socket;
     };
     auto handler = std::make_shared<socket_handler>(this->io_service_);
@@ -199,7 +198,7 @@ struct ServerFixture {
   boost::asio::io_service ios;
 };
 
-auto create_session(auto &client){
+auto create_session(auto &client) {
   auto comm = std::make_unique<srp::netcomm>(std::move(client.Socket()));
   return srp::base_session::create_session(std::move(comm));
 }
@@ -222,7 +221,7 @@ BOOST_AUTO_TEST_SUITE(Client_Communication);
 
 BOOST_FIXTURE_TEST_CASE(ClientInitMessage, ServerFixture) {
   Client client(14488);
-    auto base_session = create_session(client);
+  auto base_session = create_session(client);
   {
     std::unique_ptr<srp::recording_client> rclient;
     BOOST_REQUIRE_NO_THROW(rclient = srp::recording_client::from_base_session(std::move(base_session)));
@@ -242,7 +241,7 @@ BOOST_FIXTURE_TEST_CASE(ClientInitMessage, ServerFixture) {
 BOOST_FIXTURE_TEST_CASE(ClientCheckNoResp, ServerFixture) {
   Client client(14488);
   reply_on_message = false;
-    auto base_session = create_session(client);
+  auto base_session = create_session(client);
   {
     std::unique_ptr<srp::recording_client> rclient;
     BOOST_REQUIRE_NO_THROW(rclient = srp::recording_client::from_base_session(std::move(base_session)));
@@ -254,7 +253,7 @@ BOOST_FIXTURE_TEST_CASE(ClientCheckNoResp, ServerFixture) {
 BOOST_FIXTURE_TEST_CASE(ClientCheckResp, ServerFixture) {
   Client client(14488);
   reply_on_message = true;
-    auto base_session = create_session(client);
+  auto base_session = create_session(client);
   {
     std::unique_ptr<srp::recording_client> rclient;
     BOOST_REQUIRE_NO_THROW(rclient = srp::recording_client::from_base_session(std::move(base_session)));
@@ -269,7 +268,7 @@ BOOST_FIXTURE_TEST_CASE(ClientCheckResp, ServerFixture) {
 BOOST_FIXTURE_TEST_CASE(ClientStartResp, ServerFixture) {
   Client client(14488);
   reply_on_message = true;
-    auto base_session = create_session(client);
+  auto base_session = create_session(client);
   {
     std::unique_ptr<srp::recording_client> rclient;
     BOOST_REQUIRE_NO_THROW(rclient = srp::recording_client::from_base_session(std::move(base_session)));
@@ -288,7 +287,7 @@ BOOST_FIXTURE_TEST_CASE(ClientStartResp, ServerFixture) {
 BOOST_FIXTURE_TEST_CASE(ClientStopResp, ServerFixture) {
   Client client(14488);
   reply_on_message = true;
-    auto base_session = create_session(client);
+  auto base_session = create_session(client);
   {
     std::unique_ptr<srp::recording_client> rclient;
     BOOST_REQUIRE_NO_THROW(rclient = srp::recording_client::from_base_session(std::move(base_session)));
@@ -306,7 +305,7 @@ BOOST_FIXTURE_TEST_CASE(ClientStopResp, ServerFixture) {
 BOOST_FIXTURE_TEST_CASE(ClientFullLifeTime, ServerFixture) {
   Client client(14488);
   reply_on_message = true;
-    auto base_session = create_session(client);
+  auto base_session = create_session(client);
   {
     std::unique_ptr<srp::recording_client> rclient;
     BOOST_REQUIRE_NO_THROW(rclient = srp::recording_client::from_base_session(std::move(base_session)));
@@ -314,8 +313,7 @@ BOOST_FIXTURE_TEST_CASE(ClientFullLifeTime, ServerFixture) {
     rclient->init(42);
     rclient->check();
     rclient->start_recording("demo_dat.txt");
-    for (auto i = 0; i < 100; ++i)
-      rclient->sync_time(i);
+    for (auto i = 0; i < 100; ++i) rclient->sync_time(i);
     rclient->stop_recording();
 
     BOOST_REQUIRE_NO_THROW(rclient.reset());

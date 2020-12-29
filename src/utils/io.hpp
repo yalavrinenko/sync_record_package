@@ -15,6 +15,9 @@ namespace srp {
   struct NetUtils {
 
     struct IoParameters {
+      static constexpr auto AWAIT_TIMEOUT() {
+        return std::chrono::milliseconds(500);
+      }
     };
 
     template<typename buffer_t, typename stream_t>
@@ -32,11 +35,21 @@ namespace srp {
     static std::optional<proto_t> sync_read_proto(communication_t &comm) {
       proto_t message;
       if (comm->is_alive()){
-        if (comm->receive_message(&message)){
-          return message;
+        auto reader = [&]() {
+          return comm->receive_message(&message);
+        };
+
+        auto waiter = std::async(std::launch::async, reader);
+
+        auto status = waiter.wait_for(IoParameters::AWAIT_TIMEOUT());
+        if (status == std::future_status::ready){
+          return waiter.get() ? message : std::optional<proto_t>{};
         } else {
-          LOGW << "Unable to read proto. Receive fail";
+          comm->terminate();
+          waiter.get();
+          return {};
         }
+
       } else {
         LOGW << "Unable to read proto. Communication !is_alive.";
       }
