@@ -245,7 +245,7 @@ BOOST_FIXTURE_TEST_CASE(ClientCheckNoResp, ServerFixture) {
   {
     std::unique_ptr<srp::recording_client> rclient;
     BOOST_REQUIRE_NO_THROW(rclient = srp::recording_client::from_base_session(std::move(base_session)));
-    BOOST_REQUIRE_THROW(rclient->check(), std::bad_optional_access);
+    BOOST_REQUIRE_THROW(rclient->check().value(), std::bad_optional_access);
     BOOST_REQUIRE_NO_THROW(rclient.reset());
   }
 }

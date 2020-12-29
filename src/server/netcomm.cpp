@@ -61,7 +61,12 @@ struct srp::netcomm::netcomm_impl{
   }
 
   void terminate() {
-    //tcp_stream.expires_after(std::chrono::milliseconds(10));
+    boost::system::error_code ecode;
+    auto &socket = tcp_stream.socket();
+    socket.shutdown(boost::asio::ip::tcp::socket::shutdown_receive, ecode);
+    LOGW << "Read timeout. Shutdown read operation. " << ecode.message();
+    socket.close(ecode);
+    LOGW << "Close socket. " << ecode.message();
   }
 };
 
