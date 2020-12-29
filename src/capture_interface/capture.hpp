@@ -21,6 +21,7 @@ namespace srp {
 
     auto uid() const { return uid_; }
 
+    virtual ~capture_i() = default;
   protected:
     size_t uid_;
   };

@@ -4,7 +4,9 @@
 #include "server_acceptor.hpp"
 #include "../utils/logger.hpp"
 
-namespace srp{
+#include "netcomm.hpp"
+
+namespace srp {
   void server_acceptor::register_session_acceptor(SessionType type, srp::session_builder build_callback) {
     builder_callbacks_[type] = std::move(build_callback);
     LOGD << "Register builder callback for type " << SessionInfo::session_type_str(type) << ". Callback ptr "
@@ -27,11 +29,17 @@ namespace srp{
   }
 
   void server_acceptor::accept_connection() {
-    auto session = base_session::create_session(this->io_service_);
+    struct socket_handler {
+      explicit socket_handler(boost::asio::io_service &ios): socket(ios){
+      }
+      boost::asio::ip::tcp::socket socket;
+    };
+    auto handler = std::make_shared<socket_handler>(this->io_service_);
 
-    auto accept_function = [this, raw_session = session](boost::system::error_code ecode) {
+    auto accept_function = [this, handler](boost::system::error_code ecode) {
       if (!ecode) {
-        process_connection(std::move(raw_session));
+        auto comm = std::make_unique<netcomm>(std::move(handler->socket));
+        process_connection(base_session::create_session(std::move(comm)));
       } else if (ecode) {
         LOGW << "Fail to accept connection. Reason: " << ecode.message();
       }
@@ -39,18 +47,14 @@ namespace srp{
       if (is_active_) accept_connection();
     };
 
-    if (is_active_)
-      acceptor_.async_accept(session->socket(), accept_function);
+    if (is_active_) acceptor_.async_accept(handler->socket, accept_function);
   }
 
-  void server_acceptor::process_connection(std::shared_ptr<base_session> raw_session) {
-    auto session_ptr = base_session::create_session(std::move(raw_session->socket()));
-    raw_session.reset();
+  void server_acceptor::process_connection(std::shared_ptr<base_session> session_ptr) {
     auto client_type = session_ptr->get_type();
     LOGD << "Accept connection from " << session_ptr->remote_address() << " client type " << static_cast<int>(client_type);
-    if (builder_callbacks_.contains(client_type))
-      std::invoke(builder_callbacks_[client_type], std::move(session_ptr));
+    if (builder_callbacks_.contains(client_type)) std::invoke(builder_callbacks_[client_type], std::move(session_ptr));
     else
       LOGW << "Unknown client type: " << SessionInfo::session_type_str(client_type);
   }
-}
+}// namespace srp

@@ -20,6 +20,7 @@ namespace srp{
       meta.set_uid(uid);
 
       message.set_meta(meta.SerializeAsString());
+
       return message;
     }
 

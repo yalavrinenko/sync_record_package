@@ -11,6 +11,7 @@
 #include <boost/bind/bind.hpp>
 #include <boost/test/unit_test.hpp>
 #include <google/protobuf/util/json_util.h>
+#include "../src/server/netcomm.hpp"
 #include <unordered_map>
 using boost::asio::ip::tcp;
 using namespace srp;
@@ -101,9 +102,9 @@ struct MessageProcess {
 
 class session {
 public:
-  explicit session(boost::asio::io_service &io_service) : socket_(io_service) {}
+  explicit session(tcp::socket socket_) : ios_(new srp::netcomm(std::move(socket_))) {}
 
-  tcp::socket &socket() { return socket_; }
+  auto& stream() { return ios_; }
 
   void start() {
     sync_read_thread_ = std::async(std::launch::async, [this]() { this->sync_read(); });
@@ -115,16 +116,16 @@ private:
   void sync_read() {
     std::optional<srp::ClientActionMessage> message;
     do {
-      message = srp::NetUtils::sync_read_proto<srp::ClientActionMessage>(socket_);
+      message = srp::NetUtils::sync_read_proto<srp::ClientActionMessage>(ios_);
       if (message) {
         messages_.emplace_back(message);
         auto res = MessageProcess::process(message.value());
-        if (res) { NetUtils::sync_send_proto(socket(), res.value()); }
+        if (res) { NetUtils::sync_send_proto(ios_, res.value()); }
       }
     } while (message);
   }
 
-  tcp::socket socket_;
+  std::unique_ptr<netcomm> ios_;
   enum { max_length = 1024 };
   std::future<void> sync_read_thread_;
   std::vector<std::optional<srp::ClientActionMessage>> messages_;
@@ -140,8 +141,17 @@ public:
 
 private:
   void start_accept() {
-    session_ = std::make_unique<session>(io_service_);
-    acceptor_.async_accept(session_->socket(), [this](auto v2) { this->handle_accept(session_, v2); });
+    struct socket_handler {
+      explicit socket_handler(boost::asio::io_service &ios): socket(ios){
+      }
+      boost::asio::ip::tcp::socket socket;
+    };
+    auto handler = std::make_shared<socket_handler>(this->io_service_);
+
+    acceptor_.async_accept(handler->socket, [this, handler](auto v2) {
+      session_ = std::make_unique<session>(std::move(handler->socket));
+      this->handle_accept(session_, v2);
+    });
   }
 
   static void handle_accept(std::unique_ptr<session> &new_session, const boost::system::error_code &error) {
@@ -189,11 +199,16 @@ struct ServerFixture {
   boost::asio::io_service ios;
 };
 
+auto create_session(auto &client){
+  auto comm = std::make_unique<srp::netcomm>(std::move(client.Socket()));
+  return srp::base_session::create_session(std::move(comm));
+}
+
 BOOST_AUTO_TEST_SUITE(Client_Create);
 
 BOOST_FIXTURE_TEST_CASE(CreateClient, ServerFixture) {
   Client client(14488);
-  auto base_session = srp::base_session::create_session(std::move(client.Socket()));
+  auto base_session = create_session(client);
   {
     std::unique_ptr<srp::recording_client> rclient;
     BOOST_REQUIRE_NO_THROW(rclient = srp::recording_client::from_base_session(std::move(base_session)));
@@ -207,7 +222,7 @@ BOOST_AUTO_TEST_SUITE(Client_Communication);
 
 BOOST_FIXTURE_TEST_CASE(ClientInitMessage, ServerFixture) {
   Client client(14488);
-  auto base_session = srp::base_session::create_session(std::move(client.Socket()));
+    auto base_session = create_session(client);
   {
     std::unique_ptr<srp::recording_client> rclient;
     BOOST_REQUIRE_NO_THROW(rclient = srp::recording_client::from_base_session(std::move(base_session)));
@@ -227,7 +242,7 @@ BOOST_FIXTURE_TEST_CASE(ClientInitMessage, ServerFixture) {
 BOOST_FIXTURE_TEST_CASE(ClientCheckNoResp, ServerFixture) {
   Client client(14488);
   reply_on_message = false;
-  auto base_session = srp::base_session::create_session(std::move(client.Socket()));
+    auto base_session = create_session(client);
   {
     std::unique_ptr<srp::recording_client> rclient;
     BOOST_REQUIRE_NO_THROW(rclient = srp::recording_client::from_base_session(std::move(base_session)));
@@ -239,7 +254,7 @@ BOOST_FIXTURE_TEST_CASE(ClientCheckNoResp, ServerFixture) {
 BOOST_FIXTURE_TEST_CASE(ClientCheckResp, ServerFixture) {
   Client client(14488);
   reply_on_message = true;
-  auto base_session = srp::base_session::create_session(std::move(client.Socket()));
+    auto base_session = create_session(client);
   {
     std::unique_ptr<srp::recording_client> rclient;
     BOOST_REQUIRE_NO_THROW(rclient = srp::recording_client::from_base_session(std::move(base_session)));
@@ -254,7 +269,7 @@ BOOST_FIXTURE_TEST_CASE(ClientCheckResp, ServerFixture) {
 BOOST_FIXTURE_TEST_CASE(ClientStartResp, ServerFixture) {
   Client client(14488);
   reply_on_message = true;
-  auto base_session = srp::base_session::create_session(std::move(client.Socket()));
+    auto base_session = create_session(client);
   {
     std::unique_ptr<srp::recording_client> rclient;
     BOOST_REQUIRE_NO_THROW(rclient = srp::recording_client::from_base_session(std::move(base_session)));
@@ -273,7 +288,7 @@ BOOST_FIXTURE_TEST_CASE(ClientStartResp, ServerFixture) {
 BOOST_FIXTURE_TEST_CASE(ClientStopResp, ServerFixture) {
   Client client(14488);
   reply_on_message = true;
-  auto base_session = srp::base_session::create_session(std::move(client.Socket()));
+    auto base_session = create_session(client);
   {
     std::unique_ptr<srp::recording_client> rclient;
     BOOST_REQUIRE_NO_THROW(rclient = srp::recording_client::from_base_session(std::move(base_session)));
@@ -291,7 +306,7 @@ BOOST_FIXTURE_TEST_CASE(ClientStopResp, ServerFixture) {
 BOOST_FIXTURE_TEST_CASE(ClientFullLifeTime, ServerFixture) {
   Client client(14488);
   reply_on_message = true;
-  auto base_session = srp::base_session::create_session(std::move(client.Socket()));
+    auto base_session = create_session(client);
   {
     std::unique_ptr<srp::recording_client> rclient;
     BOOST_REQUIRE_NO_THROW(rclient = srp::recording_client::from_base_session(std::move(base_session)));

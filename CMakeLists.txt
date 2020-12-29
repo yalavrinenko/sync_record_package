@@ -25,7 +25,8 @@ set(SERVER_SRC ${SESSION_PROTO_SRCS}
         src/server/sessions.hpp src/server/server_acceptor.cpp
         src/server/rec_client.cpp src/server/rec_client.hpp
         src/server/device_collection.cpp src/server/device_collection.hpp
-        src/capture_interface/capture_control.hpp)
+        src/capture_interface/capture_control.hpp
+        src/server/netcomm.cpp)
 
 set(SERVER_TARGET_LIB srp_server)
 
@@ -62,3 +63,9 @@ endfunction()
 create_test_set(server_test_entry tests/server_test.cpp)
 create_test_set(client_test_entry tests/client_test.cpp)
 create_test_set(device_collection_test_entry  tests/device_collection_test.cpp)
+
+
+add_executable(streams 3rd/stream_tests.cpp ${SESSION_PROTO_SRCS})
+target_link_libraries(streams ${SERVER_LIBS})
+target_include_directories(streams PUBLIC ${SERVER_INCLUDES})
+target_compile_definitions(streams PUBLIC "-DBOOST_ALL_DYN_LINK -DBOOST_LOG_USE_CHAR")
