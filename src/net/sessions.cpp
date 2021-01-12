@@ -3,7 +3,7 @@
 //
 
 #include "sessions.hpp"
-#include "../protocols/actions.hpp"
+#include <protocols/actions.hpp>
 
 srp::SessionType srp::base_session::get_type() {
   if (!type_)

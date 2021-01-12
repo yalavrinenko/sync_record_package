@@ -1,7 +1,7 @@
 //
 // Created by yalavrinenko on 17.12.2020.
 //
-#include "sessions.hpp"
+#include "net/sessions.hpp"
 
 #include "rec_client.hpp"
 #include "../protocols/actions.hpp"
@@ -74,17 +74,17 @@ namespace srp {
     pimpl_->send_register_message(uid);
   }
 
-  std::optional<ClientResponse> recording_client::check() {
+  std::optional<ClientCheckResponse> recording_client::check() {
     return pimpl_->send_check_message();
   }
 
-  std::optional<ClientResponse> recording_client::start_recording(std::string const &path_template) {
+  std::optional<ClientStartRecordResponse> recording_client::start_recording(std::string const &path_template) {
     return pimpl_->send_start_message(path_template);
   }
-  std::optional<ClientResponse> recording_client::stop_recording() {
+  std::optional<ClientStopRecordResponse> recording_client::stop_recording() {
     return pimpl_->send_stop_message();
   }
-  std::optional<ClientResponse> recording_client::sync_time(size_t sync_point) {
+  std::optional<ClientSyncResponse> recording_client::sync_time(size_t sync_point) {
     return pimpl_->send_sync_signal(sync_point);
   }
 

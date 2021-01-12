@@ -4,9 +4,9 @@
 
 #ifndef SRP_SERVER_ACCEPTOR_HPP
 #define SRP_SERVER_ACCEPTOR_HPP
+#include "net/sessions.hpp"
 #include <boost/asio.hpp>
 #include <functional>
-#include "sessions.hpp"
 
 namespace srp {
   class acceptor_create_error : public std::exception {

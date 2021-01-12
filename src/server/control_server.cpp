@@ -6,6 +6,7 @@
 #include "control_server.hpp"
 #include "server_acceptor.hpp"
 #include <chrono>
+#include <utility>
 
 
 namespace srp {
@@ -13,7 +14,7 @@ namespace srp {
 
   class control_server::control_server_impl {
   public:
-    explicit control_server_impl(const control_server::connection_point &endpoint) : local_endpoint_{endpoint} {}
+    explicit control_server_impl(control_server::connection_point endpoint) : local_endpoint_{std::move(endpoint)} {}
 
     void start();
 

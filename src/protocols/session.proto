@@ -19,6 +19,7 @@ enum ActionType{
     start = 3;
     stop = 4;
     sync_time = 5;
+    time = 6;
     disconnect = 99;
 }
 
@@ -63,6 +64,20 @@ message ClientSync{
 
 message ClientSyncResponse{
     uint64 sync_point = 1;
+    double duration_sec = 2;
+    double average_fps = 3;
+    uint64 frames = 4;
+}
+
+message ClientTimeResponse{
+    enum CaptureState{
+        undefined = 0;
+        stopped = 1;
+        recording = 2;
+        synced = 3;
+    }
+
+    CaptureState state = 1;
     double duration_sec = 2;
     double average_fps = 3;
     uint64 frames = 4;

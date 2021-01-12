@@ -5,9 +5,9 @@
 #define BOOST_TEST_DYN_LINK
 
 #include "../src/protocols/actions.hpp"
-#include "../src/server/netcomm.hpp"
 #include "../src/server/rec_client.hpp"
-#include "../src/server/sessions.hpp"
+#include "net/netcomm.hpp"
+#include "net/sessions.hpp"
 #include <boost/asio.hpp>
 #include <boost/bind/bind.hpp>
 #include <boost/test/unit_test.hpp>

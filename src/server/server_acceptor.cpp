@@ -4,7 +4,7 @@
 #include "server_acceptor.hpp"
 #include "../utils/logger.hpp"
 
-#include "netcomm.hpp"
+#include "net/netcomm.hpp"
 
 namespace srp {
   void server_acceptor::register_session_acceptor(SessionType type, srp::session_builder build_callback) {

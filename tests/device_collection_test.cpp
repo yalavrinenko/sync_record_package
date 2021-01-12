@@ -14,16 +14,16 @@ class dummy_client : public capture_i {
 public:
   explicit dummy_client(size_t uid) { uid_ = uid; }
   void init(size_t uid) override { uid_ = uid; }
-  std::optional<ClientResponse> check() override { return std::optional<ClientResponse>(); }
-  std::optional<ClientResponse> start_recording(const std::string &path_template) override {
+  std::optional<ClientCheckResponse> check() override { return std::optional<ClientResponse>(); }
+  std::optional<ClientStartRecordResponse> start_recording(const std::string &path_template) override {
     LOGD << uid() << " start " << path_template;
     return std::optional<ClientResponse>(ClientResponse());
   }
-  std::optional<ClientResponse> stop_recording() override {
+  std::optional<ClientStopRecordResponse> stop_recording() override {
     LOGD << uid() << " stop ";
     return std::optional<ClientResponse>(ClientResponse());
   }
-  std::optional<ClientResponse> sync_time(size_t sync_point) override {
+  std::optional<ClientSyncResponse> sync_time(size_t sync_point) override {
     LOGD << uid() << " sync " << sync_point;
     return std::optional<ClientResponse>(ClientResponse());
   }
@@ -33,16 +33,16 @@ class broken_client : public capture_i {
 public:
   explicit broken_client(size_t uid) { uid_ = uid; }
   void init(size_t uid) override { uid_ = uid; }
-  std::optional<ClientResponse> check() override { return std::optional<ClientResponse>(); }
-  std::optional<ClientResponse> start_recording(const std::string &path_template) override {
+  std::optional<ClientCheckResponse> check() override { return std::optional<ClientResponse>(); }
+  std::optional<ClientStartRecordResponse> start_recording(const std::string &path_template) override {
     LOGD << uid() << " start " << path_template;
     return std::optional<ClientResponse>(ClientResponse());
   }
-  std::optional<ClientResponse> stop_recording() override {
+  std::optional<ClientStopRecordResponse> stop_recording() override {
     LOGD << uid() << " stop ";
     return std::optional<ClientResponse>(ClientResponse());
   }
-  std::optional<ClientResponse> sync_time(size_t sync_point) override {
+  std::optional<ClientSyncResponse> sync_time(size_t sync_point) override {
     LOGD << uid() << " broken sync " << sync_point;
     return std::optional<ClientResponse>();
   }

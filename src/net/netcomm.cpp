@@ -1,8 +1,8 @@
 //
 // Created by yalavrinenko on 29.12.2020.
 //
-#include "../utils/logger.hpp"
 #include "netcomm.hpp"
+#include "utils/logger.hpp"
 #include <google/protobuf/util/delimited_message_util.h>
 struct srp::netcomm::netcomm_impl{
   boost::asio::ip::tcp::iostream tcp_stream;

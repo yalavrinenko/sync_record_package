@@ -2,10 +2,13 @@ cmake_minimum_required(VERSION 3.15)
 project(SRP)
 enable_testing()
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "-Wall -Werror")
 
-set(SERVER_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/src")
+add_subdirectory(src/utils/ffmpeg_io)
+
 set(SERVER_LIBS)
 
 set( Boost_NO_SYSTEM_PATHS on CACHE BOOL "Do not search system for Boost" )
@@ -14,19 +17,20 @@ find_package(Boost COMPONENTS log log_setup system unit_test_framework REQUIRED)
 find_package(Protobuf REQUIRED)
 set(Protobuf_IMPORT_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/src/protocols")
 
-set(SERVER_INCLUDES ${TARGET_INCLUDES} Boost::headers ${Protobuf_INCLUDE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+set(SERVER_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/src ${TARGET_INCLUDES} Boost::headers ${Protobuf_INCLUDE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 set(SERVER_LIBS ${SERVER_LIBS} Boost::log Boost::log_setup Boost::thread Boost::system protobuf::libprotobuf)
 
 protobuf_generate_cpp(SESSION_PROTO_SRCS SESSION_PROTO_HDRS ./src/protocols/session.proto)
+protobuf_generate_cpp(CLIENT_OPTION_PROTO_SRCS CLIENT_OPTION_PROTO_HDRS ./src/protocols/options.proto)
 
 set(SERVER_SRC ${SESSION_PROTO_SRCS}
         src/server/control_server.cpp
-        src/server/sessions.cpp
-        src/server/sessions.hpp src/server/server_acceptor.cpp
+        src/net/sessions.cpp
+        src/net/sessions.hpp src/server/server_acceptor.cpp
         src/server/rec_client.cpp src/server/rec_client.hpp
         src/server/device_collection.cpp src/server/device_collection.hpp
         src/capture_interface/capture_control.hpp
-        src/server/netcomm.cpp)
+        src/net/netcomm.cpp)
 
 set(SERVER_TARGET_LIB srp_server)
 
@@ -39,6 +43,23 @@ set(SERVER_TARGET sync_server)
 add_executable(${SERVER_TARGET}  src/server/server.cpp)
 target_link_libraries(${SERVER_TARGET} ${SERVER_TARGET_LIB})
 target_include_directories(${SERVER_TARGET} PUBLIC ${SERVER_INCLUDES})
+
+set(CLIENT_COMMON_LIB netclient)
+set(CLIENT_COMMON_SRC ${SESSION_PROTO_SRCS} ${CLIENT_OPTION_PROTO_SRCS}
+        src/net/sessions.cpp src/net/netcomm.cpp
+        src/clients/netclient.cpp src/clients/netclient.hpp)
+set(CLIENT_INCLUDES ${TARGET_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/src Boost::headers ${Protobuf_INCLUDE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+set(CLIENT_LIBS ${SERVER_LIBS} Boost::log Boost::log_setup Boost::thread Boost::system protobuf::libprotobuf)
+
+add_library(${CLIENT_COMMON_LIB} ${CLIENT_COMMON_SRC})
+target_link_libraries(${CLIENT_COMMON_LIB} ${CLIENT_LIBS})
+target_include_directories(${CLIENT_COMMON_LIB} PUBLIC ${CLIENT_INCLUDES})
+target_compile_definitions(${CLIENT_COMMON_LIB} PUBLIC "-DBOOST_ALL_DYN_LINK -DBOOST_LOG_USE_CHAR")
+
+add_subdirectory(src/clients/audio)
+
+add_executable(capture_client src/clients/capture_client.cpp)
+target_link_libraries(capture_client ffmpeg_io ${CLIENT_COMMON_LIB})
 
 function(create_test_set test_name source_file)
     add_executable(${test_name} ${source_file})

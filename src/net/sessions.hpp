@@ -6,9 +6,9 @@
 #define SRP_SESSIONS_HPP
 
 #include "../capture_interface/communication_i.hpp"
+#include "session.pb.h"
 #include "../utils/io.hpp"
 #include "../utils/logger.hpp"
-#include "session.pb.h"
 
 namespace srp {
   using boost::asio::ip::tcp;
