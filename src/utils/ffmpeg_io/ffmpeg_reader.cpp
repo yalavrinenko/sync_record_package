@@ -15,7 +15,10 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-srp::ffmpeg_reader::ffmpeg_reader(const std::string &source) : container_(source) {}
+srp::ffmpeg_reader::ffmpeg_reader(const std::string &source) : container_(source) {
+  local_frame_ = av_frame_alloc();
+}
+void srp::ffmpeg_reader::select_stream(unsigned stream_id) { stream_ = container_.open_stream(stream_id); }
 
 srp::ffmpeg_io_container::ffmpeg_io_container(const std::string &source) {
   context_ptr_ = avformat_alloc_context();
@@ -51,12 +54,12 @@ srp::ffmpeg_io_container::~ffmpeg_io_container() {
 unsigned srp::ffmpeg_io_container::streams_count() const { return (context_ptr_) ? context_ptr_->nb_streams : 0; }
 
 std::unique_ptr<srp::ffmpeg_io_container::ffmpeg_stream> srp::ffmpeg_io_container::open_stream(unsigned int stream_index) {
-  if (stream_index < context_ptr_->nb_streams)
+  if (stream_index >= context_ptr_->nb_streams)
     throw std::out_of_range(std::to_string(stream_index) + " out of range " + std::to_string(streams_count()));
   return std::make_unique<srp::ffmpeg_io_container::ffmpeg_stream>(this->context_ptr_, context_ptr_->streams[stream_index]);
 }
 
-srp::ffmpeg_io_container::ffmpeg_stream::ffmpeg_stream(const AVFormatContext *linked_context, AVStream *linked_stream)
+srp::ffmpeg_io_container::ffmpeg_stream::ffmpeg_stream(AVFormatContext *linked_context, AVStream *linked_stream)
     : linked_context_{linked_context}, stream_{linked_stream} {
   codec_par_ = stream_->codecpar;
 
@@ -74,20 +77,49 @@ srp::ffmpeg_io_container::ffmpeg_stream::ffmpeg_stream(const AVFormatContext *li
   }
 
   coder_context_ = avcodec_alloc_context3(codec_);
-  if (coder_context_ == nullptr){
+  if (coder_context_ == nullptr) {
     LOGE << "Unable to open codec context.";
     throw codec_open_fail();
   }
 
   avcodec_parameters_to_context(coder_context_, codec_par_);
   auto ecode = avcodec_open2(coder_context_, codec_, nullptr);
-  if (ecode != 0){
+  if (ecode != 0) {
     LOGE << "Fail to open codec. Error code: " << ecode;
     throw codec_open_fail();
+  }
+
+  packet_ = av_packet_alloc();
+  if (packet_ == nullptr) {
+    LOGE << "Fail to alloc packet.";
+    throw std::runtime_error("Packet allocation error");
   }
 }
 
 
 srp::ffmpeg_io_container::ffmpeg_stream::~ffmpeg_stream() {
   if (coder_context_) avcodec_free_context(&coder_context_);
+}
+
+bool srp::ffmpeg_io_container::ffmpeg_stream::extract_frame(AVFrame *frame) {
+
+  auto read_code = avcodec_receive_frame(coder_context_, frame);
+
+  while (read_code == AVERROR(EAGAIN)) {
+    [[maybe_unused]] auto ecode = av_read_frame(linked_context_, packet_);
+    ecode = avcodec_send_packet(coder_context_, packet_);
+    read_code = avcodec_receive_frame(coder_context_, frame);
+  }
+
+  return read_code == AVERROR_EOF;
+}
+
+srp::audio_frame::audio_frame(AVFrame *raw_frame)
+    : nb_samples{raw_frame->nb_samples}, format{raw_frame->format}, sample_rate{raw_frame->sample_rate}, pts{raw_frame->pts} {
+  data.resize(raw_frame->channels);
+
+  for (auto channel_id = 0; channel_id < raw_frame->channels; ++channel_id) {
+    data[channel_id].resize(raw_frame->linesize[0]);
+    std::copy(raw_frame->extended_data[channel_id], raw_frame->extended_data[channel_id] + raw_frame->linesize[0], data[channel_id].begin());
+  }
 }
