@@ -18,6 +18,11 @@ struct AVPacket;
 struct AVFrame;
 
 namespace srp {
+  struct native_audio_frame{
+    explicit native_audio_frame(AVFrame* raw);
+    AVFrame* frame;
+  };
+
   struct audio_frame {
     audio_frame() = default;
     explicit audio_frame(AVFrame* raw_frame);
@@ -40,20 +45,49 @@ namespace srp {
     };
     class ffmpeg_stream {
     public:
+      struct stream_options{
+        enum class stream_type{
+          audio,
+          video,
+          text
+        };
+
+        stream_type type;
+        size_t bitrate = 64000;
+
+        struct audio{
+          int sample_rate = 44100;
+        };
+
+        size_t pts_step = 1;
+
+        audio audio_opt;
+      };
+
       ffmpeg_stream() = default;
-      ffmpeg_stream(AVFormatContext *linked_context, AVStream *linked_stream);
+      ffmpeg_stream(AVFormatContext *linked_context, AVStream *linked_stream, size_t stream_index);
+      ffmpeg_stream(AVFormatContext *linked_context, stream_options const& options);
 
       bool extract_frame(AVFrame *frame);
+      bool write_frame(const AVFrame *frame);
+
+      auto const& option() const {
+        return opt_;
+      }
 
       ~ffmpeg_stream();
 
-    protected:
+    private:
+      void create_audio(stream_options const &options);
+
       AVFormatContext *linked_context_{};
       AVCodecParameters *codec_par_ = nullptr;
       AVStream *stream_ = nullptr;
       AVCodec *codec_ = nullptr;
       AVCodecContext *coder_context_ = nullptr;
       AVPacket *packet_ = nullptr;
+      stream_options opt_{};
+      size_t stream_index_{};
     };
 
     explicit ffmpeg_io_container(std::string source, Mode mode);
@@ -61,11 +95,14 @@ namespace srp {
     [[nodiscard]] unsigned streams_count() const;
 
     std::unique_ptr<ffmpeg_stream> open_stream(unsigned int stream_index);
+    std::unique_ptr<ffmpeg_stream> create_stream(ffmpeg_stream::stream_options const &option);
 
     ~ffmpeg_io_container();
 
   private:
     void open_exist(std::string const &source);
+
+    void create(std::string const &source);
 
     Mode mode_;
 

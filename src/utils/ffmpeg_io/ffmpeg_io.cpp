@@ -14,19 +14,18 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-srp::ffmpeg_io_container::ffmpeg_io_container(std::string source, Mode mode): mode_{mode}, source_(std::move(source)) {
-  if (mode_ == Mode::read)
-    open_exist(source_);
+srp::ffmpeg_io_container::ffmpeg_io_container(std::string source, Mode mode) : mode_{mode}, source_(std::move(source)) {
+  if (mode_ == Mode::read) open_exist(source_);
+  else
+    create(source_);
 }
 
 srp::ffmpeg_io_container::~ffmpeg_io_container() {
-  if (mode_ == Mode::write){
+  if (mode_ == Mode::write) {
     av_dump_format(context_ptr_, 0, source_.c_str(), 1);
     AVDictionary *opt = nullptr;
     auto ecode = avformat_write_header(context_ptr_, &opt);
-    if (ecode < 0) {
-      LOGW << "Error in write header. Code:" << ecode;
-    }
+    if (ecode < 0) { LOGW << "Error in write header. Code:" << ecode; }
   }
   if (context_ptr_) {
     avformat_free_context(context_ptr_);
@@ -39,7 +38,7 @@ unsigned srp::ffmpeg_io_container::streams_count() const { return (context_ptr_)
 std::unique_ptr<srp::ffmpeg_io_container::ffmpeg_stream> srp::ffmpeg_io_container::open_stream(unsigned int stream_index) {
   if (stream_index >= context_ptr_->nb_streams)
     throw std::out_of_range(std::to_string(stream_index) + " out of range " + std::to_string(streams_count()));
-  return std::make_unique<srp::ffmpeg_io_container::ffmpeg_stream>(this->context_ptr_, context_ptr_->streams[stream_index]);
+  return std::make_unique<srp::ffmpeg_io_container::ffmpeg_stream>(this->context_ptr_, context_ptr_->streams[stream_index], stream_index);
 }
 
 void srp::ffmpeg_io_container::open_exist(std::string const &source) {
@@ -66,8 +65,20 @@ void srp::ffmpeg_io_container::open_exist(std::string const &source) {
   }
 }
 
-srp::ffmpeg_io_container::ffmpeg_stream::ffmpeg_stream(AVFormatContext *linked_context, AVStream *linked_stream)
-    : linked_context_{linked_context}, stream_{linked_stream} {
+void srp::ffmpeg_io_container::create(const std::string &source) {
+  auto ecode = avformat_alloc_output_context2(&context_ptr_, nullptr, nullptr, source.c_str());
+  if (ecode < 0) {
+    LOGE << "Fail to allocate output context. Code: " << ecode;
+    throw context_allocation_fail();
+  }
+}
+std::unique_ptr<srp::ffmpeg_io_container::ffmpeg_stream>
+srp::ffmpeg_io_container::create_stream(const srp::ffmpeg_io_container::ffmpeg_stream::stream_options &option) {
+  return std::make_unique<ffmpeg_stream>(context_ptr_, option);
+}
+
+srp::ffmpeg_io_container::ffmpeg_stream::ffmpeg_stream(AVFormatContext *linked_context, AVStream *linked_stream, size_t stream_index)
+    : linked_context_{linked_context}, stream_{linked_stream}, stream_index_{stream_index} {
   codec_par_ = stream_->codecpar;
 
   codec_ = avcodec_find_decoder(codec_par_->codec_id);
@@ -120,6 +131,91 @@ bool srp::ffmpeg_io_container::ffmpeg_stream::extract_frame(AVFrame *frame) {
 
   return read_code == AVERROR_EOF;
 }
+srp::ffmpeg_io_container::ffmpeg_stream::ffmpeg_stream(AVFormatContext *linked_context, stream_options const &options)
+    : linked_context_{linked_context}, opt_{options} {
+  if (opt_.type == stream_options::stream_type::audio)
+    create_audio(options);
+
+  stream_index_ = linked_context_->nb_streams - 1;
+
+  AVDictionary *opt = nullptr;
+  auto ecode = avcodec_open2(coder_context_, codec_, &opt);
+  if (ecode < 0){
+    LOGE << "Fail to open encoder codec. Code: " << ecode;
+    throw codec_open_fail();
+  }
+
+  avcodec_parameters_from_context(codec_par_, coder_context_);
+}
+
+void srp::ffmpeg_io_container::ffmpeg_stream::create_audio(const srp::ffmpeg_io_container::ffmpeg_stream::stream_options &options) {
+  auto &format = linked_context_->oformat;
+
+  codec_ = avcodec_find_encoder(format->audio_codec);
+  if (codec_ == nullptr){
+    LOGE << "Could not find encoder for " << avcodec_get_name(format->audio_codec);
+    throw std::runtime_error("fail to find encoder");
+  }
+
+  stream_ = avformat_new_stream(linked_context_, codec_);
+  if (stream_ == nullptr){
+    LOGE << "Fail to create stream.";
+    throw std::runtime_error("stream creation error");
+  }
+
+  coder_context_ = avcodec_alloc_context3(codec_);
+  if (coder_context_ == nullptr){
+    LOGE << "Fail to allocate encoder context.";
+    throw codec_open_fail();
+  }
+
+  coder_context_->sample_fmt = (codec_->sample_fmts) ? codec_->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
+
+  coder_context_->bit_rate = opt_.bitrate;
+  coder_context_->sample_rate = opt_.audio_opt.sample_rate;
+
+  if (codec_->supported_samplerates) {
+    coder_context_->sample_rate = codec_->supported_samplerates[0];
+    for (auto i = 0; codec_->supported_samplerates[i]; i++) {
+      if (codec_->supported_samplerates[i] == opt_.audio_opt.sample_rate)
+        coder_context_->sample_rate = opt_.audio_opt.sample_rate;
+    }
+  }
+
+  coder_context_->channels = av_get_channel_layout_nb_channels(coder_context_->channel_layout);
+  coder_context_->channel_layout = AV_CH_LAYOUT_STEREO;
+  if (codec_->channel_layouts) {
+    coder_context_->channel_layout = codec_->channel_layouts[0];
+    for (auto i = 0; codec_->channel_layouts[i]; i++) {
+      if (codec_->channel_layouts[i] == AV_CH_LAYOUT_STEREO)
+        coder_context_->channel_layout = AV_CH_LAYOUT_STEREO;
+    }
+  }
+  coder_context_->channels = av_get_channel_layout_nb_channels(coder_context_->channel_layout);
+  stream_->time_base.num = 1;
+  stream_->time_base.den = coder_context_->sample_rate;
+}
+
+bool srp::ffmpeg_io_container::ffmpeg_stream::write_frame(const AVFrame *frame) {
+  AVPacket packet;
+
+  av_init_packet(&packet);
+  auto ecode = avcodec_send_frame(coder_context_, frame);
+
+  if (ecode < 0){
+    LOGE << "Error in send frame to coder.";
+    throw std::runtime_error("encoding error");
+  }
+
+  while ((ecode = avcodec_receive_packet(coder_context_, &packet)) >= 0){
+    packet.stream_index = stream_index_;
+//    packet.dts = dts;
+//    packet.pts = frame->pts;
+    av_interleaved_write_frame(linked_context_, &packet);
+  }
+
+  return true;
+}
 
 srp::audio_frame::audio_frame(AVFrame *raw_frame)
     : nb_samples{raw_frame->nb_samples}, format{raw_frame->format}, sample_rate{raw_frame->sample_rate}, pts{raw_frame->pts} {
@@ -129,4 +225,9 @@ srp::audio_frame::audio_frame(AVFrame *raw_frame)
     data[channel_id].resize(raw_frame->linesize[0]);
     std::copy(raw_frame->extended_data[channel_id], raw_frame->extended_data[channel_id] + raw_frame->linesize[0], data[channel_id].begin());
   }
+}
+
+srp::native_audio_frame::native_audio_frame(AVFrame *raw) {
+  frame = av_frame_alloc();
+  av_frame_copy(frame, raw);
 }
