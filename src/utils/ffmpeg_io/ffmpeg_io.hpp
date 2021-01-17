@@ -19,8 +19,25 @@ struct AVFrame;
 
 namespace srp {
   struct native_audio_frame{
+    native_audio_frame() = default;
     explicit native_audio_frame(AVFrame* raw);
-    AVFrame* frame;
+    native_audio_frame(native_audio_frame&& rhs) noexcept{
+      frame = rhs.frame; rhs.frame = nullptr;
+    }
+
+    native_audio_frame& operator= (native_audio_frame&& rhs) noexcept{
+      release();
+      frame = rhs.frame; rhs.frame = nullptr;
+      return *this;
+    }
+
+    AVFrame* to_avframe(size_t pts) const;
+
+    ~native_audio_frame();
+
+    AVFrame* frame = nullptr;
+  private:
+    void release();
   };
 
   struct audio_frame {
@@ -52,7 +69,7 @@ namespace srp {
           text
         };
 
-        stream_type type;
+        stream_type type{};
         size_t bitrate = 64000;
 
         struct audio{
@@ -71,6 +88,10 @@ namespace srp {
       bool extract_frame(AVFrame *frame);
       bool write_frame(const AVFrame *frame);
 
+      [[nodiscard]] auto context() const {
+        return linked_context_;
+      }
+
       auto const& option() const {
         return opt_;
       }
@@ -88,9 +109,15 @@ namespace srp {
       AVPacket *packet_ = nullptr;
       stream_options opt_{};
       size_t stream_index_{};
+      bool is_writable_ {false};
     };
 
-    explicit ffmpeg_io_container(std::string source, Mode mode);
+    struct io_device{
+      std::string name;
+      std::string format;
+    };
+
+    ffmpeg_io_container(io_device source, Mode mode);
 
     [[nodiscard]] unsigned streams_count() const;
 
@@ -100,13 +127,13 @@ namespace srp {
     ~ffmpeg_io_container();
 
   private:
-    void open_exist(std::string const &source);
+    void open_exist(std::string const &source, std::string const &format);
 
     void create(std::string const &source);
 
     Mode mode_;
 
-    std::string source_;
+    io_device source_;
 
     AVFormatContext *context_ptr_ = nullptr;
   };

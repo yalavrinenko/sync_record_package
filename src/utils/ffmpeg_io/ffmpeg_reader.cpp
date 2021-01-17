@@ -15,7 +15,7 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-srp::ffmpeg_reader::ffmpeg_reader(const std::string &source) : container_(source, ffmpeg_io_container::Mode::read) {
+srp::ffmpeg_reader::ffmpeg_reader(const ffmpeg_io_container::io_device &source) : container_(source, ffmpeg_io_container::Mode::read) {
   local_frame_ = av_frame_alloc();
 }
 void srp::ffmpeg_reader::select_stream(unsigned stream_id) { stream_ = container_.open_stream(stream_id); }
