@@ -37,6 +37,8 @@ namespace srp {
       return stream_;
     }
 
+    [[nodiscard]] ffmpeg_io_container::io_device const& source() const;
+
   protected:
     bool eof_ = false;
     AVFrame *local_frame_;

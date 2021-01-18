@@ -31,7 +31,9 @@ namespace srp {
       return *this;
     }
 
-    AVFrame* to_avframe(size_t pts) const;
+    long long pts_delta(native_audio_frame const& rhs) const;
+
+    [[nodiscard]] AVFrame* to_avframe(size_t pts) const;
 
     ~native_audio_frame();
 
@@ -123,6 +125,10 @@ namespace srp {
 
     std::unique_ptr<ffmpeg_stream> open_stream(unsigned int stream_index);
     std::unique_ptr<ffmpeg_stream> create_stream(ffmpeg_stream::stream_options const &option);
+
+    auto const& source() const{
+      return source_;
+    }
 
     ~ffmpeg_io_container();
 

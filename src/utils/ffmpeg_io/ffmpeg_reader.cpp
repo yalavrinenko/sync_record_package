@@ -19,3 +19,6 @@ srp::ffmpeg_reader::ffmpeg_reader(const ffmpeg_io_container::io_device &source) 
   local_frame_ = av_frame_alloc();
 }
 void srp::ffmpeg_reader::select_stream(unsigned stream_id) { stream_ = container_.open_stream(stream_id); }
+const srp::ffmpeg_io_container::io_device &srp::ffmpeg_reader::source() const {
+  return container_.source();
+}

@@ -29,6 +29,9 @@ srp::ffmpeg_io_container::~ffmpeg_io_container() {
 
     if (mode_ == Mode::write)
       av_write_trailer(context_ptr_);
+    else {
+      avformat_close_input(&context_ptr_);
+    }
 
     avformat_free_context(context_ptr_);
     context_ptr_ = nullptr;
@@ -139,8 +142,9 @@ srp::ffmpeg_io_container::ffmpeg_stream::~ffmpeg_stream() {
 }
 
 bool srp::ffmpeg_io_container::ffmpeg_stream::extract_frame(AVFrame *frame) {
-
   int read_code;
+
+  av_frame_unref(frame);
 
   while ((read_code = avcodec_receive_frame(coder_context_, frame)) == AVERROR(EAGAIN)) {
     [[maybe_unused]] auto ecode = av_read_frame(linked_context_, packet_);
@@ -265,4 +269,7 @@ AVFrame *srp::native_audio_frame::to_avframe(size_t pts) const {
   AVFrame *f = av_frame_clone(frame);
   f->pts = pts;
   return f;
+}
+long long srp::native_audio_frame::pts_delta(const srp::native_audio_frame &rhs) const {
+  return rhs.frame->pts - frame->pts;
 }

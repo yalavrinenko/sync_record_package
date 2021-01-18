@@ -59,7 +59,8 @@ target_compile_definitions(${CLIENT_COMMON_LIB} PUBLIC "-DBOOST_ALL_DYN_LINK -DB
 add_subdirectory(src/clients/audio)
 
 add_executable(capture_client src/clients/capture_client.cpp)
-target_link_libraries(capture_client ffmpeg_io ${CLIENT_COMMON_LIB})
+target_link_libraries(capture_client ffmpeg_io ${CLIENT_COMMON_LIB}
+        audio_instance)
 
 function(create_test_set test_name source_file)
     add_executable(${test_name} ${source_file})
@@ -90,3 +91,7 @@ add_executable(streams 3rd/stream_tests.cpp ${SESSION_PROTO_SRCS})
 target_link_libraries(streams ${SERVER_LIBS})
 target_include_directories(streams PUBLIC ${SERVER_INCLUDES})
 target_compile_definitions(streams PUBLIC "-DBOOST_ALL_DYN_LINK -DBOOST_LOG_USE_CHAR")
+
+add_executable(capture_client_test tests/audio_client_test.cpp)
+target_link_libraries(capture_client_test ffmpeg_io ${CLIENT_COMMON_LIB}
+        audio_instance)

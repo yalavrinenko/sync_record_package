@@ -2,9 +2,9 @@
 // Created by yalavrinenko on 12.01.2021.
 //
 
-#include "netclient.hpp"
+#include <clients/netclient.hpp>
 #include <future>
-#include "audio/audio_instance.hpp"
+#include <clients/audio/audio_instance.hpp>
 #include <fstream>
 #include <utils/logger.hpp>
 #include <algorithm>
@@ -58,7 +58,7 @@ int main(int argc, char** argv){
       LOGD << "Start rec. to " << *start->data_path().begin() << " " << *start->sync_point_path().begin();
     }
 
-    std::this_thread::sleep_for(30s);
+    std::this_thread::sleep_for(300s);
 
     for (auto i = 0; i < 5; ++i){
       auto sync = ai.sync_time(i);
@@ -71,7 +71,7 @@ int main(int argc, char** argv){
       LOGD << "Rec. " << stop->frames() << " " << stop->duration_sec() << " " << stop->average_fps();
     }
 
-    std::this_thread::sleep_for(1s);
+    std::this_thread::sleep_for(10s);
     make_snap = false;
   }
   return 0;
