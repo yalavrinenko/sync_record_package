@@ -26,11 +26,13 @@ namespace srp{
 
     std::optional<ClientCheckResponse> check() override;
 
+    std::optional<ClientTimeResponse> state() override;
+
     virtual bool is_connected();
 
     static std::unique_ptr<recording_client> from_base_session(std::shared_ptr<base_session> session);
 
-    ~recording_client();
+    ~recording_client() override;
   protected:
     explicit recording_client(std::shared_ptr<base_session> session);
 

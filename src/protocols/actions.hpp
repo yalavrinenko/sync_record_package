@@ -39,6 +39,10 @@ namespace srp{
       return empty_message(ActionType::stop);
     }
 
+    static ClientActionMessage state_request_message() {
+      return empty_message(ActionType::time);
+    }
+
     static ClientActionMessage sync_message(size_t sync_point){
       auto message = empty_message(ActionType::sync_time);
       ClientSync meta; meta.set_sync_point(sync_point);

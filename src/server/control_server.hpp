@@ -8,8 +8,11 @@
 #include <future>
 #include <string>
 #include <memory>
+#include <net/sessions.hpp>
 
 namespace srp {
+  class server_acceptor;
+
   class control_server : public iserver {
   public:
     struct connection_point {
@@ -24,6 +27,8 @@ namespace srp {
     void start() override;
 
     void stop() override;
+
+    void register_session_acceptor(SessionType type, session_builder build_callback);
 
     ~control_server();
 

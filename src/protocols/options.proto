@@ -6,6 +6,7 @@ package srp;
 message OptionEntry{
   string tag = 1;
   google.protobuf.Any options = 2;
+  ControlServerOption control_server = 3;
 }
 
 message ControlServerOption{
@@ -23,5 +24,4 @@ message AudioCaptureOptions{
 
   uint64 bitrate = 3;
   uint64 sample_rate = 4;
-  ControlServerOption server = 1;
 }

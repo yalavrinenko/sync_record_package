@@ -114,9 +114,7 @@ private:
   size_t uid_;
 };
 
-srp::netclient::~netclient() {
-
-}
+srp::netclient::~netclient() = default;
 
 void srp::netclient::stop() {
   std::ranges::for_each(instances_, [](auto &instance) { instance->stop(); });
@@ -142,4 +140,9 @@ void srp::netclient::run() {
     return false;
   }
 }
+
+size_t srp::netclient::instances_count() const {
+  return instances_.size();
+}
+
 srp::netclient::netclient() = default;

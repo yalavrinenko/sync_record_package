@@ -226,7 +226,7 @@ std::pair<bool, std::string> audio_instance::audio_io::make_check() {
 
 void srp::audio_instance::init(size_t uid) {
   uid_ = uid;
-  LOGD << "Recieve uid " << uid_;
+  LOGD << "Receive uid " << uid_;
 }
 std::optional<ClientCheckResponse> srp::audio_instance::check() {
   auto [state, info] = device_->make_check();

@@ -34,24 +34,29 @@ namespace srp {
       session_->send_message(ActionMessageBuilder::register_client(uid));
     }
 
-    std::optional<ClientResponse> send_check_message(){
+    auto send_check_message(){
       session_->send_message(ActionMessageBuilder::check_client());
-      return session_->receive_message<ClientResponse>();
+      return session_->receive_message<ClientCheckResponse>();
     }
 
-    std::optional<ClientResponse> send_start_message(std::string const &path_template) {
+    auto send_start_message(std::string const &path_template) {
       session_->send_message(ActionMessageBuilder::start_message(path_template));
-      return session_->receive_message<ClientResponse>();
+      return session_->receive_message<ClientStartRecordResponse>();
     }
 
-    std::optional<ClientResponse> send_stop_message(){
+    auto send_stop_message(){
       session_->send_message(ActionMessageBuilder::stop_message());
-      return session_->receive_message<ClientResponse>();
+      return session_->receive_message<ClientStopRecordResponse>();
     }
 
-    std::optional<ClientResponse> send_sync_signal(size_t sync_point){
+    auto send_sync_signal(size_t sync_point){
       session_->send_message(ActionMessageBuilder::sync_message(sync_point));
-      return session_->receive_message<ClientResponse>();
+      return session_->receive_message<ClientSyncResponse>();
+    }
+
+    auto send_state_signal() {
+      session_->send_message(ActionMessageBuilder::state_request_message());
+      return session_->receive_message<ClientTimeResponse>();
     }
 
     std::shared_ptr<srp::base_session> session_;
@@ -77,7 +82,6 @@ namespace srp {
   std::optional<ClientCheckResponse> recording_client::check() {
     return pimpl_->send_check_message();
   }
-
   std::optional<ClientStartRecordResponse> recording_client::start_recording(std::string const &path_template) {
     return pimpl_->send_start_message(path_template);
   }
@@ -86,6 +90,9 @@ namespace srp {
   }
   std::optional<ClientSyncResponse> recording_client::sync_time(size_t sync_point) {
     return pimpl_->send_sync_signal(sync_point);
+  }
+  std::optional<ClientTimeResponse> recording_client::state() {
+    return pimpl_->send_state_signal();
   }
 
   bool recording_client::is_connected() {

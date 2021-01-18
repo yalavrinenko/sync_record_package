@@ -21,6 +21,8 @@ namespace srp {
 
     [[maybe_unused]] bool add_client_instance(std::unique_ptr<srp::capture_i> capture, ControlServerOption const &target_opt);
 
+    [[nodiscard]] size_t instances_count() const;
+
     ~netclient();
 
   private:

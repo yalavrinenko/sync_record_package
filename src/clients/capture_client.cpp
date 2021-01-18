@@ -2,77 +2,86 @@
 // Created by yalavrinenko on 12.01.2021.
 //
 
-#include "netclient.hpp"
-#include <future>
 #include "audio/audio_instance.hpp"
-#include <fstream>
-#include <utils/logger.hpp>
+#include "netclient.hpp"
 #include <algorithm>
-#include <iterator>
+#include <filesystem>
+#include <fstream>
+#include <functional>
+#include <future>
 #include <google/protobuf/util/json_util.h>
+#include <iterator>
+#include <map>
+#include <utils/logger.hpp>
 
-int main(int argc, char** argv){
-  if (argc < 2){
-    LOGE << "No input files. Use ./capture_client optionpath.json";
-    std::exit(1);
+class InstanceBuilder {
+public:
+  static auto build(srp::OptionEntry const &entry);
+private:
+  template<typename proto_t, typename instance_t>
+  static auto builder_entry() {
+    return [](auto const &entry) {
+      proto_t option;
+      entry.options().UnpackTo(&option);
+      return std::make_unique<instance_t>(option);
+    };
   }
+  static auto &builder_map() {
+    using namespace std::string_literals;
+    using build_function = std::function<std::unique_ptr<srp::capture_i>(srp::OptionEntry const &)>;
+    static std::map<std::string, build_function> builders{
+        {"audio"s, InstanceBuilder::builder_entry<srp::AudioCaptureOptions, srp::audio_instance>()},
+    };
+    return builders;
+  }
+};
 
-  std::ifstream in(argv[1]);
+auto InstanceBuilder::build(const srp::OptionEntry &entry) { return std::invoke(builder_map()[entry.tag()], std::cref(entry)); }
+
+
+std::string read_json(std::filesystem::path const &path) {
+  std::ifstream in(path);
 
   std::string json;
   std::string line;
-  while (std::getline(in, line)){
-    json += line + "\n";
-  }
-  LOGD << "Read config from " << argv[1] << "\n" << json;
+  while (std::getline(in, line)) { json += line + "\n"; }
+  return json;
+}
 
+auto create_client_instance(std::string const &json_options) {
   srp::OptionEntry entry;
-  auto status = google::protobuf::util::JsonStringToMessage(json, &entry);
+  auto status = google::protobuf::util::JsonStringToMessage(json_options, &entry);
 
   if (!status.ok()) {
     LOGE << "Fail to parse input json. Reason: " << status.message();
+    return std::pair{std::unique_ptr<srp::capture_i>(nullptr), srp::ControlServerOption{}};
+  }
+
+  return std::pair{InstanceBuilder::build(entry), entry.control_server()};
+}
+
+int main(int argc, char **argv) {
+  if (argc < 2) {
+    LOGE << "No input files. Use ./capture_client option_path.json";
     std::exit(1);
   }
 
-  if (entry.tag() == "audio") {
-    srp::AudioCaptureOptions options;
-    entry.options().UnpackTo(&options);
+  srp::netclient client;
 
-    srp::audio_instance ai(options);
-    auto check = ai.check();
-    if (check) { LOGD << check->check_ok() << "\n" << check->info(); }
+  for (auto client_entry_id = 1; client_entry_id < argc; ++client_entry_id) {
+    auto json = read_json(argv[client_entry_id]);
+    LOGD << "Read config from json: \n" << json;
 
-    using namespace std::chrono_literals;
-
-    volatile bool make_snap = true;
-    auto monitor = std::async(std::launch::async, [&ai, &make_snap](){
-      while (make_snap){
-        auto state = ai.state();
-        LOGD << "Monitor: " << state->state() << " " << state->frames() << " " << state->duration_sec() << " " << state->average_fps();
-        std::this_thread::sleep_for(100ms);
-      }
-    });
-
-    auto start = ai.start_recording("demo_1");
-    if (start){
-      LOGD << "Start rec. to " << *start->data_path().begin() << " " << *start->sync_point_path().begin();
+    auto [instance, serv_options] = create_client_instance(json);
+    if (instance == nullptr){
+      LOGE << "Fail to create capture instance.";
+    } else {
+      client.add_client_instance(std::move(instance), serv_options);
     }
-
-    std::this_thread::sleep_for(30s);
-
-    for (auto i = 0; i < 5; ++i){
-      auto sync = ai.sync_time(i);
-      LOGD << sync->frames() << " " << sync->duration_sec() << " " << sync->average_fps();
-      std::this_thread::sleep_for(1s);
-    }
-
-    auto stop = ai.stop_recording();
-    if (stop){
-      LOGD << "Rec. " << stop->frames() << " " << stop->duration_sec() << " " << stop->average_fps();
-    }
-
-    std::this_thread::sleep_for(1s);
-    make_snap = false;
   }
+
+  LOGD << "Init " << client.instances_count() << " capture instance.";
+  client.run();
+
   return 0;
 }

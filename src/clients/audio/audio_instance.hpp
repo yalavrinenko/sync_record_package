@@ -29,8 +29,6 @@ namespace srp {
     ~audio_instance() override;
 
   private:
-    size_t uid_{};
-
     class audio_io;
     std::unique_ptr<audio_io> device_;
   };

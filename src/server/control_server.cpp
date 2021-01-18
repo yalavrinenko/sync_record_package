@@ -20,6 +20,8 @@ namespace srp {
 
     void stop();
 
+    auto& acceptor() { return acceptor_; }
+
     ~control_server_impl();
 
   private:
@@ -85,5 +87,11 @@ namespace srp {
   }
   control_server::control_server(control_server &&rhs) noexcept {
     pimpl_ = std::move(rhs.pimpl_);
+  }
+
+  void control_server::register_session_acceptor(SessionType type, session_builder build_callback) {
+    if (pimpl_->acceptor()){
+      pimpl_->acceptor()->register_session_acceptor(type, std::move(build_callback));
+    }
   }
 }// namespace srp

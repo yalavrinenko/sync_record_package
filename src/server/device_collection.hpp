@@ -26,13 +26,16 @@ namespace srp{
 
     capture_device& find_device(size_t device_id);
 
-    auto device_count() const { return slaves_.size(); }
+    [[nodiscard]] auto device_count() const { return slaves_.size(); }
+
   protected:
     void on_start_callback(std::string const &path_template);
 
     void on_stop_callback();
 
     void on_sync_callback(size_t sync_point);
+
+    void on_state_callback();
 
     void process_result(capture_device &slave, std::optional<ClientResponse> const &response);
 
@@ -45,6 +48,7 @@ namespace srp{
 
     capture_controller master_ = nullptr;
     std::list<capture_device> slaves_;
+
     std::list<capture_controller> monitors_;
     std::mutex slave_lock_;
   };

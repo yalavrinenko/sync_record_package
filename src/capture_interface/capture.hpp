@@ -20,11 +20,11 @@ namespace srp {
     virtual std::optional<ClientSyncResponse> sync_time(size_t sync_point) = 0;
     virtual std::optional<ClientTimeResponse> state() = 0;
 
-    auto uid() const { return uid_; }
+    [[nodiscard]] auto uid() const { return uid_; }
 
     virtual ~capture_i() = default;
   protected:
-    size_t uid_;
+    size_t uid_{};
   };
 
   using capture_device = std::unique_ptr<capture_i>;
