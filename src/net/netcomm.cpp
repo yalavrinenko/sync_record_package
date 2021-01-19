@@ -4,13 +4,22 @@
 #include "netcomm.hpp"
 #include "utils/logger.hpp"
 #include <google/protobuf/util/delimited_message_util.h>
+#include <google/protobuf/util/json_util.h>
+
 struct srp::netcomm::netcomm_impl{
   boost::asio::ip::tcp::iostream tcp_stream;
   explicit netcomm_impl(boost::asio::ip::tcp::socket socket): tcp_stream{std::move(socket)}{
   }
 
+  auto to_json(auto const* message) {
+    std::string str;
+    auto status = google::protobuf::util::MessageToJsonString(dynamic_cast<google::protobuf::Message const&>(*message), &str);
+    return str;
+  };
+
   bool send_message(google::protobuf::MessageLite const* message) {
     u_int64_t message_size = message->ByteSizeLong();
+//    LOGD << "Send: " << (size_t)message << " bytes. Content: " << to_json(message);
     std::string message_string;
     if (message->SerializeToString(&message_string)) {
       tcp_stream << message_size << message_string;
@@ -28,7 +37,8 @@ struct srp::netcomm::netcomm_impl{
       std::vector<char> buffer(message_size);
       auto extracted = tcp_stream.readsome(buffer.data(), message_size);
       if (extracted == static_cast<long>(message_size)){
-        if (message->ParsePartialFromArray(buffer.data(), message_size)){
+        if (message->ParseFromArray(buffer.data(), message_size)){
+//          LOGD << "Receive: " << (size_t)message_size << " bytes. Content: " << to_json(message);
           return true;
         } else {
           LOGW << "Fail to parse income data";

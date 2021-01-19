@@ -32,22 +32,26 @@ namespace srp {
     }
 
     template<typename proto_t, typename communication_t>
-    static std::optional<proto_t> sync_read_proto(communication_t &comm) {
+    static std::optional<proto_t> sync_read_proto(communication_t &comm, bool wait = false) {
       proto_t message;
       if (comm->is_alive()){
-        auto reader = [&]() {
-          return comm->receive_message(&message);
-        };
+        if (!wait) {
+          auto reader = [&]() { return comm->receive_message(&message); };
 
-        auto waiter = std::async(std::launch::async, reader);
+          auto waiter = std::async(std::launch::async, reader);
 
-        auto status = waiter.wait_for(IoParameters::AWAIT_TIMEOUT());
-        if (status == std::future_status::ready){
-          return waiter.get() ? message : std::optional<proto_t>{};
+          auto status = waiter.wait_for(IoParameters::AWAIT_TIMEOUT());
+
+          if (status == std::future_status::ready) {
+            return waiter.get() ? message : std::optional<proto_t>{};
+          } else {
+            comm->terminate();
+            waiter.get();
+            return {};
+          }
         } else {
-          comm->terminate();
-          waiter.get();
-          return {};
+          auto state = comm->receive_message(&message);
+          return (state) ? message : std::optional<proto_t>{};
         }
 
       } else {

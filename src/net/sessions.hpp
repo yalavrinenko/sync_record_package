@@ -11,8 +11,6 @@
 #include "../utils/logger.hpp"
 
 namespace srp {
-//  using boost::asio::ip::tcp;
-
   class SessionInfo {
   public:
     static std::string_view session_type_str(SessionType t) {
@@ -61,9 +59,9 @@ namespace srp {
     }
 
     template<typename message_t>
-    std::optional<message_t> receive_message(){
+    std::optional<message_t> receive_message(bool wait = false){
       if (is_active()){
-        auto message = srp::NetUtils::sync_read_proto<message_t>(commutator());
+        auto message = srp::NetUtils::sync_read_proto<message_t>(commutator(), wait);
         if (!message)
           switch_state(connection_state::closed);
 

@@ -9,6 +9,8 @@
 #include <functional>
 
 namespace srp {
+  using namespace boost::asio::ip;
+
   class acceptor_create_error : public std::exception {
   public:
     explicit acceptor_create_error(std::string_view reason) : what_{std::move(reason)} {}

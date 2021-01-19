@@ -53,7 +53,8 @@ namespace srp {
   void server_acceptor::process_connection(std::shared_ptr<base_session> session_ptr) {
     auto client_type = session_ptr->get_type();
     LOGD << "Accept connection from " << session_ptr->remote_address() << " client type " << static_cast<int>(client_type);
-    if (builder_callbacks_.contains(client_type)) std::invoke(builder_callbacks_[client_type], std::move(session_ptr));
+    if (builder_callbacks_.contains(client_type))
+      std::invoke(builder_callbacks_[client_type], std::move(session_ptr));
     else
       LOGW << "Unknown client type: " << SessionInfo::session_type_str(client_type);
   }

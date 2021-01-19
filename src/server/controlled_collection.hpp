@@ -13,15 +13,15 @@ namespace srp{
   public:
     static std::shared_ptr<controlled_device_collection> create_collection();
 
-    static session_builder create_client_builder(auto collection);
+    static session_builder create_client_builder(const std::shared_ptr<controlled_device_collection>& collection);
 
-    static session_builder create_monitor_builder(auto collection);
+    static session_builder create_monitor_builder(const std::shared_ptr<controlled_device_collection>& collection);
 
   protected:
     controlled_device_collection() = default;
 
   private:
-    static size_t client_id_counter_;
+    static std::atomic<size_t> client_id_counter_;
   };
 }
 

@@ -22,11 +22,23 @@ namespace srp {
 
     auto& acceptor() { return acceptor_; }
 
+    void register_session_acceptor(srp::SessionType type, srp::session_builder builder){
+      builder_callbacks_[type] = std::move(builder);
+    }
+
     ~control_server_impl();
 
   private:
+
+    void copy_session_acceptors(){
+      for (auto &[type, builder] : builder_callbacks_)
+        acceptor_->register_session_acceptor(type, builder);
+    }
+
     control_server::connection_point const local_endpoint_;
     std::unique_ptr<server_acceptor> acceptor_ = nullptr;
+
+    std::unordered_map<SessionType, session_builder> builder_callbacks_;
 
     std::future<void> acceptor_thread_;
     boost::asio::io_service io_service_;
@@ -39,6 +51,8 @@ namespace srp {
       else
         acceptor_ =
             std::make_unique<server_acceptor>(io_service_, tcp::endpoint(boost::asio::ip::make_address(local_endpoint_.host), local_endpoint_.port));
+
+      copy_session_acceptors();
     } catch (boost::system::system_error const &error) {
       LOGE << "Unable to start client acceptor. Reasone:" << error.what();
       throw acceptor_create_error(error.what());
@@ -90,8 +104,6 @@ namespace srp {
   }
 
   void control_server::register_session_acceptor(SessionType type, session_builder build_callback) {
-    if (pimpl_->acceptor()){
-      pimpl_->acceptor()->register_session_acceptor(type, std::move(build_callback));
-    }
+    pimpl_->register_session_acceptor(type, std::move(build_callback));
   }
 }// namespace srp

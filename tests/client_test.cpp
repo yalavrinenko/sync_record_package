@@ -258,7 +258,7 @@ BOOST_FIXTURE_TEST_CASE(ClientCheckResp, ServerFixture) {
     std::unique_ptr<srp::recording_client> rclient;
     BOOST_REQUIRE_NO_THROW(rclient = srp::recording_client::from_base_session(std::move(base_session)));
     auto check_result = rclient->check();
-    auto check = ProtoUtils::message_from_bytes<ClientCheckResponse>(check_result.value().data());
+    auto check = check_result.value(); //ProtoUtils::message_from_bytes<ClientCheckResponse>(check_result.value());
     BOOST_REQUIRE(check.check_ok());
     BOOST_REQUIRE(check.info() == "Check all device");
     BOOST_REQUIRE_NO_THROW(rclient.reset());
@@ -274,7 +274,7 @@ BOOST_FIXTURE_TEST_CASE(ClientStartResp, ServerFixture) {
     BOOST_REQUIRE_NO_THROW(rclient = srp::recording_client::from_base_session(std::move(base_session)));
     auto check_result = rclient->start_recording("phub");
 
-    auto check = ProtoUtils::message_from_bytes<ClientStartRecordResponse>(check_result.value().data());
+    auto check = check_result.value(); //ProtoUtils::message_from_bytes<ClientStartRecordResponse>(check_result.value().data());
 
     BOOST_REQUIRE(check.data_path().size() == 1);
     BOOST_REQUIRE(check.data_path()[0] == "phub.dat");
@@ -293,7 +293,7 @@ BOOST_FIXTURE_TEST_CASE(ClientStopResp, ServerFixture) {
     BOOST_REQUIRE_NO_THROW(rclient = srp::recording_client::from_base_session(std::move(base_session)));
     auto check_result = rclient->stop_recording();
 
-    auto check = ProtoUtils::message_from_bytes<ClientStopRecordResponse>(check_result.value().data());
+    auto check = check_result.value(); //ProtoUtils::message_from_bytes<ClientStopRecordResponse>(check_result.value().data());
 
     BOOST_REQUIRE(check.duration_sec() == 128.0);
     BOOST_REQUIRE(check.frames() == 800);

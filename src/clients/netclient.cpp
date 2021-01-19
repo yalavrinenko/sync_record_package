@@ -29,9 +29,14 @@ public:
         session_type.set_type(client);
         session_->send_message(session_type);
 
-        auto registration = session_->receive_message<ClientRegistrationMessage>();
-        if (registration) {
-          uid_ = registration->uid();
+        auto action = session_->receive_message<ClientActionMessage>();
+        if (action && action->action() == srp::ActionType::registration) {
+          auto registration = srp::ProtoUtils::message_from_bytes<ClientRegistrationMessage>(action->meta());
+
+          uid_ = registration.uid();
+          device_->init(uid_);
+
+          LOGD << "Register instance with uid " << device_->uid();
         } else {
           LOGE << "Fail to get uid.";
           is_active_ = false;
@@ -75,13 +80,16 @@ protected:
            return serialize_response(device_->sync_time(meta.sync_point()));
          }},
         {ActionType::time, [this, &command]() { return serialize_response(device_->state()); }},
-        {ActionType::disconnect, [this, &command]() { device_->stop_recording(); is_active_ = false; return ""; }}
-    };
+        {ActionType::disconnect, [this, &command]() {
+           device_->stop_recording();
+           is_active_ = false;
+           return "";
+         }}};
 
     return actions[command.action()]();
   }
 
-  [[nodiscard]] ClientResponse create_response(ActionType trigger, const std::string& data) const {
+  [[nodiscard]] ClientResponse create_response(ActionType trigger, const std::string &data) const {
     ClientResponse resp;
     resp.set_uid(uid_);
     resp.set_trigger_action(trigger);
@@ -92,13 +100,14 @@ protected:
 private:
   void main_loop() {
     while (!stop_main_loop && is_active()) {
-      auto command = session_->receive_message<ClientActionMessage>();
+      auto command = session_->receive_message<ClientActionMessage>(true);
       if (command) {
         auto response = execute_command(command.value());
-        if (session_->is_active())
-          session_->send_message(create_response(command->action(), response));
+        if (session_->is_active()) session_->send_message(create_response(command->action(), response));
       } else {
         LOGE << "Fail to parse command.";
+        if (!is_active())
+          device_->stop_recording();
       }
     }
   }
@@ -141,8 +150,6 @@ void srp::netclient::run() {
   }
 }
 
-size_t srp::netclient::instances_count() const {
-  return instances_.size();
-}
+size_t srp::netclient::instances_count() const { return instances_.size(); }
 
 srp::netclient::netclient() = default;
