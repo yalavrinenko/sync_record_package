@@ -6,6 +6,7 @@ enum SessionType{
     undefined = 0;
     ui = 1;
     client = 2;
+    master = 3;
 }
 
 message ClientWelcomeMessage{
@@ -20,6 +21,8 @@ enum ActionType{
     stop = 4;
     sync_time = 5;
     time = 6;
+
+    log = 98;
     disconnect = 99;
 }
 

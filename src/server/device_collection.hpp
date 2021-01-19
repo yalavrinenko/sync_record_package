@@ -28,6 +28,9 @@ namespace srp{
 
     [[nodiscard]] auto device_count() const { return slaves_.size(); }
 
+    void add_capture_monitor(capture_controller monitor);
+    void add_master_controller(capture_controller master);
+
   protected:
     void on_start_callback(std::string const &path_template);
 
@@ -39,6 +42,8 @@ namespace srp{
 
     void process_result(capture_device &slave, std::optional<ClientResponse> const &response);
 
+    srp::controller_callbacks controller_callback_set();
+
   private:
     using signal_sender_callback = std::function<std::pair<capture_device &, std::future<std::optional<ClientResponse>>>(capture_device&)>;
 
@@ -47,6 +52,7 @@ namespace srp{
     void exclude_slave(auto &slave);
 
     capture_controller master_ = nullptr;
+
     std::list<capture_device> slaves_;
 
     std::list<capture_controller> monitors_;

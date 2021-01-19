@@ -17,6 +17,8 @@ namespace srp{
 
     static session_builder create_monitor_builder(const std::shared_ptr<controlled_device_collection>& collection);
 
+    static session_builder create_master_builder(const std::shared_ptr<controlled_device_collection>& collection);
+
   protected:
     controlled_device_collection() = default;
 

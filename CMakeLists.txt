@@ -30,7 +30,7 @@ set(SERVER_SRC ${SESSION_PROTO_SRCS}
         src/server/rec_client.cpp src/server/rec_client.hpp
         src/server/device_collection.cpp src/server/device_collection.hpp
         src/capture_interface/capture_control.hpp
-        src/net/netcomm.cpp src/server/controlled_collection.cpp src/server/controlled_collection.hpp)
+        src/net/netcomm.cpp src/server/controlled_collection.cpp src/server/controlled_collection.hpp src/server/remote_control_client.cpp src/server/remote_control_client.hpp)
 
 set(SERVER_TARGET_LIB srp_server)
 

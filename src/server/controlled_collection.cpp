@@ -4,6 +4,7 @@
 
 #include "controlled_collection.hpp"
 #include <server/rec_client.hpp>
+#include <server/remote_control_client.hpp>
 
 std::atomic<size_t> srp::controlled_device_collection::client_id_counter_ {0};
 
@@ -28,8 +29,21 @@ srp::session_builder srp::controlled_device_collection::create_client_builder(co
 
   return builder;
 }
+
 srp::session_builder srp::controlled_device_collection::create_monitor_builder(const std::shared_ptr<controlled_device_collection>& collection) {
-  return [](auto raw) {
-    LOGW << "Monitor client not impl.";
+  auto builder = [collection](const std::shared_ptr<base_session>& raw_session) {
+    auto monitor = srp::remote_control_client::from_base_session(raw_session);
+    collection->add_capture_monitor(std::move(monitor));
   };
+
+  return builder;
+}
+
+srp::session_builder srp::controlled_device_collection::create_master_builder(const std::shared_ptr<controlled_device_collection> &collection) {
+  auto builder = [collection](const std::shared_ptr<base_session>& raw_session) {
+    auto master = srp::remote_control_client::from_base_session(raw_session);
+    collection->add_master_controller(std::move(master));
+  };
+
+  return builder;
 }

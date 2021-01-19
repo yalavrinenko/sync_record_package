@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <future>
 #include <list>
+#include <protocols/actions.hpp>
+#include <utils/io.hpp>
 
 #include "device_collection.hpp"
 void srp::device_collection::send_signal_implementation(srp::device_collection::signal_sender_callback const &signal_sender) {
@@ -83,7 +85,6 @@ void srp::device_collection::on_sync_callback(size_t sync_point) {
 
   send_signal_implementation(sync_time);
 }
-
 void srp::device_collection::on_state_callback() {
   auto state_trigger_function = [this](auto &slave) {
     return std::pair<capture_device &, async_response>{
@@ -93,19 +94,62 @@ void srp::device_collection::on_state_callback() {
   send_signal_implementation(state_trigger_function);
 }
 
+
 void srp::device_collection::process_result(srp::capture_device &slave, const std::optional<ClientResponse> &response) {
   if (!response) {
     LOGW << "Error in communication with " << slave->uid() << " Exclude from list. ";
     exclude_slave(slave);
   } else {
-    LOGD << "OK";
+    auto log_action = srp::ActionMessageBuilder::log_message(response.value());
+    std::ranges::for_each(monitors_, [&log_action](auto const& monitor){
+      monitor->send_message(log_action);
+    });
   }
 }
+
 void srp::device_collection::add_capture_device(srp::capture_device device) { slaves_.push_back(std::move(device)); }
+
 void srp::device_collection::remove_capture_device(size_t device_id) { exclude_slave(find_device(device_id)); }
+
 srp::capture_device &srp::device_collection::find_device(size_t device_id) {
   auto device = std::find_if(slaves_.begin(), slaves_.end(), [device_id](auto const &dev) { return dev->uid() == device_id; });
   if (device == slaves_.end()) throw std::out_of_range("device id out of range");
 
   return *device;
+}
+
+void srp::device_collection::add_capture_monitor(srp::capture_controller monitor) {
+  monitors_.emplace_back(std::move(monitor));
+}
+void srp::device_collection::add_master_controller(srp::capture_controller master) {
+  if (master_) { master_->stop();
+  }
+
+  master_ = std::move(master);
+  master_->start(controller_callbacks());
+}
+srp::controller_callbacks srp::device_collection::controller_callback_set() {
+  srp::controller_callbacks cbs;
+  auto on_start = [this](srp::ClientActionMessage const& action){
+    auto data = ProtoUtils::message_from_bytes<ClientStartRecord>(action.meta());
+    this->on_start_callback(data.path_pattern());
+  };
+  cbs.add_callback(ActionType::start, on_start);
+
+  auto on_stop = [this](auto const& action){
+    this->on_stop_callback();
+  };
+  cbs.add_callback(ActionType::stop, on_stop);
+
+  auto on_sync = [this](auto const& action){
+    auto data = ProtoUtils::message_from_bytes<ClientSync>(action.meta());
+    this->on_sync_callback(data.sync_point());
+  };
+  cbs.add_callback(ActionType::sync_time, on_sync);
+
+  auto on_state = [this](auto const& state){
+    this->on_state_callback();
+  };
+  cbs.add_callback(ActionType::time, on_state);
+  return cbs;
 }

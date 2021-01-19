@@ -15,6 +15,7 @@ int main(int argc, char** argv){
 
   server.register_session_acceptor(srp::SessionType::client, srp::controlled_device_collection::create_client_builder(collection));
   server.register_session_acceptor(srp::SessionType::ui, srp::controlled_device_collection::create_monitor_builder(collection));
+  server.register_session_acceptor(srp::SessionType::master, srp::controlled_device_collection::create_master_builder(collection));
 
   server.start();
   return 0;
