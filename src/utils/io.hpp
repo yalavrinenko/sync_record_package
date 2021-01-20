@@ -8,6 +8,9 @@
 #include "logger.hpp"
 #include <boost/asio.hpp>
 #include <google/protobuf/util/delimited_message_util.h>
+#include <google/protobuf/util/json_util.h>
+#include <filesystem>
+#include <fstream>
 
 namespace srp {
   class message_parse_error : public std::exception {};
@@ -16,7 +19,7 @@ namespace srp {
 
     struct IoParameters {
       static constexpr auto AWAIT_TIMEOUT() {
-        return std::chrono::milliseconds(500);
+        return std::chrono::milliseconds(2000);
       }
     };
 
@@ -88,9 +91,32 @@ namespace srp {
     template<typename message_t>
     static message_t message_from_bytes(auto const &data) {
       message_t m;
-      if (m.ParseFromString(data)) return m;
+      if (m.ParseFromArray(data.data(), data.size())) return m;
       else
         throw message_parse_error();
+    }
+
+    template <typename message_t>
+    static std::optional<message_t> message_from_json(auto const& json){
+      message_t entry;
+      auto status = google::protobuf::util::JsonStringToMessage(json, &entry);
+
+      if (!status.ok()) {
+        LOGE << "Fail to parse input json. Reason: " << status.message();
+        return {};
+      }
+      return entry;
+    }
+  };
+
+  struct IoUtils{
+    static std::string read_json(std::filesystem::path const &path) {
+      std::ifstream in(path);
+
+      std::string json;
+      std::string line;
+      while (std::getline(in, line)) { json += line + "\n"; }
+      return json;
     }
   };
 };// namespace srp

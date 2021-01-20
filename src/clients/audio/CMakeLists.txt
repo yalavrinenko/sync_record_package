@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.17)
 project(SRP)
 
 add_library(audio_instance audio_instance.cpp audio_instance.hpp)

@@ -9,10 +9,10 @@
 #include <fstream>
 #include <functional>
 #include <future>
-#include <google/protobuf/util/json_util.h>
 #include <iterator>
 #include <map>
 #include <utils/logger.hpp>
+#include <utils/io.hpp>
 
 class InstanceBuilder {
 public:
@@ -38,26 +38,14 @@ private:
 
 auto InstanceBuilder::build(const srp::OptionEntry &entry) { return std::invoke(builder_map()[entry.tag()], std::cref(entry)); }
 
-
-std::string read_json(std::filesystem::path const &path) {
-  std::ifstream in(path);
-
-  std::string json;
-  std::string line;
-  while (std::getline(in, line)) { json += line + "\n"; }
-  return json;
-}
-
 auto create_client_instance(std::string const &json_options) {
-  srp::OptionEntry entry;
-  auto status = google::protobuf::util::JsonStringToMessage(json_options, &entry);
+  auto entry = srp::ProtoUtils::message_from_json<srp::OptionEntry>(json_options);
 
-  if (!status.ok()) {
-    LOGE << "Fail to parse input json. Reason: " << status.message();
+  if (!entry) {
     return std::pair{std::unique_ptr<srp::capture_i>(nullptr), srp::ControlServerOption{}};
   }
 
-  return std::pair{InstanceBuilder::build(entry), entry.control_server()};
+  return std::pair{InstanceBuilder::build(entry.value()), entry.value().control_server()};
 }
 
 int main(int argc, char **argv) {
@@ -69,7 +57,7 @@ int main(int argc, char **argv) {
   srp::netclient client;
 
   for (auto client_entry_id = 1; client_entry_id < argc; ++client_entry_id) {
-    auto json = read_json(argv[client_entry_id]);
+    auto json = srp::IoUtils::read_json(argv[client_entry_id]);
     LOGD << "Read config from json: \n" << json;
 
     auto [instance, serv_options] = create_client_instance(json);

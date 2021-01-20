@@ -66,7 +66,7 @@ protected:
   }
 
   std::string execute_command(ClientActionMessage const &command) {
-    std::unordered_map<ActionType, std::function<std::string(void)>> actions{
+    static std::unordered_map<ActionType, std::function<std::string(void)>> actions{
         {ActionType::check_device, [this, &command]() { return serialize_response(device_->check()); }},
         {ActionType::start,
          [this, &command]() {

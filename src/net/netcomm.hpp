@@ -12,8 +12,8 @@ namespace srp{
   public:
     explicit netcomm(boost::asio::ip::tcp::socket socket);
 
-    bool send_message(const google::protobuf::MessageLite *message) override;
-    bool receive_message(google::protobuf::MessageLite *message) override;
+    bool send_message(const google::protobuf::Message *message) override;
+    bool receive_message(google::protobuf::Message *message) override;
     bool is_alive() override;
     std::string commutator_info() override;
     void terminate() override;

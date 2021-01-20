@@ -12,7 +12,8 @@
 namespace srp{
 
   struct controller_callbacks{
-    using control_callback = std::function<void(srp::ClientActionMessage const&)>;
+//    using control_callback = std::function<void(srp::ClientActionMessage const&)>;
+    using control_callback = std::function<void(google::protobuf::Message const&)>;
 
     void add_callback(srp::ActionType action, control_callback const& cb){
       callbacks_[action] = cb;

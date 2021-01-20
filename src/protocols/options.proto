@@ -25,3 +25,14 @@ message AudioCaptureOptions{
   uint64 bitrate = 3;
   uint64 sample_rate = 4;
 }
+
+message UiControlOption{
+  enum ControlRole{
+    undefined = 0;
+    master = 1;
+    monitor = 2;
+  }
+
+  ControlRole role = 1;
+  ControlServerOption server = 2;
+}

@@ -16,13 +16,7 @@ namespace srp {
     std::optional<response_t> wait_response(){
       auto resp = session_->receive_message<ClientResponse>();
       if (resp) {
-        response_t check_status;
-        if (check_status.ParseFromString(resp.value().data()))
-          return check_status;
-        else {
-          LOGW << "Fail to parse income check message.";
-          return {};
-        }
+        return srp::ProtoUtils::message_from_bytes<response_t>(resp->data());
       }
 
       LOGW << "Fail to receive income message.";
@@ -36,27 +30,27 @@ namespace srp {
 
     auto send_check_message(){
       session_->send_message(ActionMessageBuilder::check_client());
-      return session_->receive_message<ClientCheckResponse>();
+      return wait_response<ClientCheckResponse>();
     }
 
     auto send_start_message(std::string const &path_template) {
       session_->send_message(ActionMessageBuilder::start_message(path_template));
-      return session_->receive_message<ClientStartRecordResponse>();
+      return wait_response<ClientStartRecordResponse>();
     }
 
     auto send_stop_message(){
       session_->send_message(ActionMessageBuilder::stop_message());
-      return session_->receive_message<ClientStopRecordResponse>();
+      return wait_response<ClientStopRecordResponse>();
     }
 
     auto send_sync_signal(size_t sync_point){
       session_->send_message(ActionMessageBuilder::sync_message(sync_point));
-      return session_->receive_message<ClientSyncResponse>();
+      return wait_response<ClientSyncResponse>();
     }
 
     auto send_state_signal() {
       session_->send_message(ActionMessageBuilder::state_request_message());
-      return session_->receive_message<ClientTimeResponse>();
+      return wait_response<ClientTimeResponse>();
     }
 
     std::shared_ptr<srp::base_session> session_;

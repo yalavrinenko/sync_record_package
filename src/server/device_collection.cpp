@@ -9,7 +9,13 @@
 #include <utils/io.hpp>
 
 #include "device_collection.hpp"
-void srp::device_collection::send_signal_implementation(srp::device_collection::signal_sender_callback const &signal_sender) {
+
+void srp::device_collection::signal_to_device(srp::capture_device &device, const srp::device_collection::signal_sender_callback &signal_sender) {
+  auto result = signal_sender(device);
+  process_result(result.first, result.second.get());
+}
+
+void srp::device_collection::signal_broadcast(srp::device_collection::signal_sender_callback const &signal_sender) {
   using futures = std::vector<std::pair<capture_device &, std::future<std::optional<ClientResponse>>>>;
   std::lock_guard lock(slave_lock_);
 
@@ -66,7 +72,7 @@ void srp::device_collection::on_start_callback(const std::string &path_template)
                                                        })};
   };
 
-  send_signal_implementation(start_function);
+  signal_broadcast(start_function);
 }
 void srp::device_collection::on_stop_callback() {
   auto stop_function = [this](auto &slave) {
@@ -74,16 +80,17 @@ void srp::device_collection::on_stop_callback() {
         slave, async_invoke([this, &slave]() { return puck_income_message(slave->stop_recording(), slave->uid(), ActionType::stop); })};
   };
 
-  send_signal_implementation(stop_function);
+  signal_broadcast(stop_function);
 }
 void srp::device_collection::on_sync_callback(size_t sync_point) {
   auto sync_time = [this, &sync_point](auto &slave) {
     return std::pair<capture_device &, async_response>{slave, async_invoke([this, &sync_point, &slave]() {
-                                                         return puck_income_message(slave->sync_time(sync_point), slave->uid(), ActionType::sync_time);
+                                                         return puck_income_message(slave->sync_time(sync_point), slave->uid(),
+                                                                                    ActionType::sync_time);
                                                        })};
   };
 
-  send_signal_implementation(sync_time);
+  signal_broadcast(sync_time);
 }
 void srp::device_collection::on_state_callback() {
   auto state_trigger_function = [this](auto &slave) {
@@ -91,9 +98,16 @@ void srp::device_collection::on_state_callback() {
         slave, async_invoke([this, &slave]() { return puck_income_message(slave->state(), slave->uid(), ActionType::time); })};
   };
 
-  send_signal_implementation(state_trigger_function);
+  signal_broadcast(state_trigger_function);
 }
+void srp::device_collection::on_check_callback() {
+  auto check_trigger_function = [this](auto &slave) {
+    return std::pair<capture_device &, async_response>{
+        slave, async_invoke([this, &slave]() { return puck_income_message(slave->check(), slave->uid(), ActionType::check_device); })};
+  };
 
+  signal_broadcast(check_trigger_function);
+}
 
 void srp::device_collection::process_result(srp::capture_device &slave, const std::optional<ClientResponse> &response) {
   if (!response) {
@@ -101,13 +115,26 @@ void srp::device_collection::process_result(srp::capture_device &slave, const st
     exclude_slave(slave);
   } else {
     auto log_action = srp::ActionMessageBuilder::log_message(response.value());
-    std::ranges::for_each(monitors_, [&log_action](auto const& monitor){
-      monitor->send_message(log_action);
-    });
+
+    if (master_) master_->send_message(log_action);
+
+    std::ranges::for_each(monitors_, [&log_action](auto const &monitor) { monitor->send_message(log_action); });
   }
 }
 
-void srp::device_collection::add_capture_device(srp::capture_device device) { slaves_.push_back(std::move(device)); }
+void srp::device_collection::add_capture_device(srp::capture_device device) {
+  slaves_.push_back(std::move(device));
+
+  auto check_trigger_function = [this](auto &slave) {
+    return std::pair<capture_device &, async_response>{
+        slave, std::async(std::launch::deferred,
+                          [this, &slave]() { return puck_income_message(slave->check(), slave->uid(), ActionType::check_device); })};
+  };
+
+  LOGD << "[UID=" << slaves_.back()->uid() << "] Check new client...";
+  signal_to_device(slaves_.back(), check_trigger_function);
+  LOGD << "[UID=" << slaves_.back()->uid() << "] Checked...";
+}
 
 void srp::device_collection::remove_capture_device(size_t device_id) { exclude_slave(find_device(device_id)); }
 
@@ -118,38 +145,36 @@ srp::capture_device &srp::device_collection::find_device(size_t device_id) {
   return *device;
 }
 
-void srp::device_collection::add_capture_monitor(srp::capture_controller monitor) {
-  monitors_.emplace_back(std::move(monitor));
-}
+void srp::device_collection::add_capture_monitor(srp::capture_controller monitor) { monitors_.emplace_back(std::move(monitor)); }
 void srp::device_collection::add_master_controller(srp::capture_controller master) {
-  if (master_) { master_->stop();
-  }
+  if (master_) { master_->stop(); }
 
   master_ = std::move(master);
-  master_->start(controller_callbacks());
+  master_->start(controller_callback_set());
 }
+
 srp::controller_callbacks srp::device_collection::controller_callback_set() {
   srp::controller_callbacks cbs;
-  auto on_start = [this](srp::ClientActionMessage const& action){
+  auto on_start = [this](auto const &action_raw) {
+    auto &action = dynamic_cast<srp::ClientActionMessage const &>(action_raw);
     auto data = ProtoUtils::message_from_bytes<ClientStartRecord>(action.meta());
     this->on_start_callback(data.path_pattern());
   };
   cbs.add_callback(ActionType::start, on_start);
 
-  auto on_stop = [this](auto const& action){
-    this->on_stop_callback();
-  };
+  auto on_stop = [this](auto const &action) { this->on_stop_callback(); };
   cbs.add_callback(ActionType::stop, on_stop);
 
-  auto on_sync = [this](auto const& action){
+  auto on_sync = [this](auto const &action_raw) {
+    auto &action = dynamic_cast<srp::ClientActionMessage const &>(action_raw);
     auto data = ProtoUtils::message_from_bytes<ClientSync>(action.meta());
     this->on_sync_callback(data.sync_point());
   };
   cbs.add_callback(ActionType::sync_time, on_sync);
 
-  auto on_state = [this](auto const& state){
-    this->on_state_callback();
-  };
+  auto on_state = [this](auto const &state) { this->on_state_callback(); };
   cbs.add_callback(ActionType::time, on_state);
+
+  cbs.add_callback(ActionType::check_device, [this](auto const &state) { this->on_check_callback(); });
   return cbs;
 }

@@ -33,11 +33,11 @@ void srp::remote_control_client::net_control_impl::accept_signal(srp::controller
   }
   LOGD << "Stop receiving control signals.";
 }
-void srp::remote_control_client::net_control_impl::start(const srp::controller_callbacks &callbacks) {
+void srp::remote_control_client::net_control_impl::start(srp::controller_callbacks const& callbacks) {
   accept_signals_ = true;
-  control_thread_ = std::async(std::launch::async, [this](auto const& callbacks){
+  control_thread_ = std::async(std::launch::async, [this](auto callbacks){
     this->accept_signal(callbacks);
-  }, std::cref(callbacks));
+  }, callbacks);
 }
 void srp::remote_control_client::net_control_impl::stop() {
   accept_signals_ = false;

@@ -32,11 +32,11 @@ message ClientActionMessage{
 }
 
 message ClientRegistrationMessage{
-    uint64 uid = 1;
+    fixed64 uid = 1;
 }
 
 message ClientResponse{
-    uint64 uid = 1;
+    fixed64 uid = 1;
     ActionType trigger_action = 2;
     bytes data = 3;
 }
@@ -58,18 +58,18 @@ message ClientStartRecordResponse{
 message ClientStopRecordResponse{
     double duration_sec = 1;
     double average_fps = 2;
-    uint64 frames = 3;
+    fixed64 frames = 3;
 }
 
 message ClientSync{
-    uint64 sync_point = 1;
+    fixed64 sync_point = 1;
 }
 
 message ClientSyncResponse{
-    uint64 sync_point = 1;
+    fixed64 sync_point = 1;
     double duration_sec = 2;
     double average_fps = 3;
-    uint64 frames = 4;
+    fixed64 frames = 4;
 }
 
 message ClientTimeResponse{
@@ -83,5 +83,5 @@ message ClientTimeResponse{
     CaptureState state = 1;
     double duration_sec = 2;
     double average_fps = 3;
-    uint64 frames = 4;
+    fixed64 frames = 4;
 }

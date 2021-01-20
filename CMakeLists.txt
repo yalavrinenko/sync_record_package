@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.17)
 project(SRP)
 enable_testing()
 
@@ -30,7 +30,9 @@ set(SERVER_SRC ${SESSION_PROTO_SRCS}
         src/server/rec_client.cpp src/server/rec_client.hpp
         src/server/device_collection.cpp src/server/device_collection.hpp
         src/capture_interface/capture_control.hpp
-        src/net/netcomm.cpp src/server/controlled_collection.cpp src/server/controlled_collection.hpp src/server/remote_control_client.cpp src/server/remote_control_client.hpp)
+        src/net/netcomm.cpp src/server/controlled_collection.cpp
+        src/server/controlled_collection.hpp src/server/remote_control_client.cpp
+        src/server/remote_control_client.hpp)
 
 set(SERVER_TARGET_LIB srp_server)
 
@@ -48,6 +50,7 @@ set(CLIENT_COMMON_LIB netclient)
 set(CLIENT_COMMON_SRC ${SESSION_PROTO_SRCS} ${CLIENT_OPTION_PROTO_SRCS}
         src/net/sessions.cpp src/net/netcomm.cpp
         src/clients/netclient.cpp src/clients/netclient.hpp)
+
 set(CLIENT_INCLUDES ${TARGET_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/src Boost::headers ${Protobuf_INCLUDE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 set(CLIENT_LIBS ${SERVER_LIBS} Boost::log Boost::log_setup Boost::thread Boost::system protobuf::libprotobuf)
 
@@ -56,11 +59,17 @@ target_link_libraries(${CLIENT_COMMON_LIB} ${CLIENT_LIBS})
 target_include_directories(${CLIENT_COMMON_LIB} PUBLIC ${CLIENT_INCLUDES})
 target_compile_definitions(${CLIENT_COMMON_LIB} PUBLIC "-DBOOST_ALL_DYN_LINK -DBOOST_LOG_USE_CHAR")
 
+add_subdirectory(src/clients/control)
+
 add_subdirectory(src/clients/audio)
 
 add_executable(capture_client src/clients/capture_client.cpp)
 target_link_libraries(capture_client ffmpeg_io ${CLIENT_COMMON_LIB}
         audio_instance)
+
+add_executable(control_client src/clients/control.cpp)
+target_link_libraries(control_client ui_control ${CLIENT_COMMON_LIB})
+
 
 function(create_test_set test_name source_file)
     add_executable(${test_name} ${source_file})

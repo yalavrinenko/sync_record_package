@@ -40,6 +40,8 @@ namespace srp{
 
     void on_state_callback();
 
+    void on_check_callback();
+
     void process_result(capture_device &slave, std::optional<ClientResponse> const &response);
 
     srp::controller_callbacks controller_callback_set();
@@ -47,7 +49,9 @@ namespace srp{
   private:
     using signal_sender_callback = std::function<std::pair<capture_device &, std::future<std::optional<ClientResponse>>>(capture_device&)>;
 
-    void send_signal_implementation(signal_sender_callback const& signal_sender);
+    void signal_broadcast(signal_sender_callback const& signal_sender);
+
+    void signal_to_device(capture_device& device, signal_sender_callback const& signal_sender);
 
     void exclude_slave(auto &slave);
 

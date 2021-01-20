@@ -4,6 +4,7 @@
 
 #ifndef SRP_COMMUNICATION_I_HPP
 #define SRP_COMMUNICATION_I_HPP
+#include <options.pb.h>
 #include <string>
 namespace google{
   namespace protobuf{
@@ -15,8 +16,8 @@ namespace srp {
 
   class communication_i {
   public:
-    virtual bool send_message(const google::protobuf::MessageLite *message) = 0;
-    virtual bool receive_message(google::protobuf::MessageLite* message) = 0;
+    virtual bool send_message(const google::protobuf::Message *message) = 0;
+    virtual bool receive_message(google::protobuf::Message *message) = 0;
     virtual bool is_alive() = 0;
     virtual std::string commutator_info() = 0;
     virtual void terminate() = 0;
