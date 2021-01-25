@@ -19,33 +19,33 @@ namespace {
 }
 
 int srp::ui_back::start_ui(int argc, char **argv) {
-//  if (argc < 2) {
-//    LOGE << "Option file is required. Use ./app option.json.";
-//    return -1;
-//  }
-//  auto json = srp::IoUtils::read_json(argv[1]);
-//  auto options = srp::ProtoUtils::message_from_json<UiControlOption>(json);
-//
-//  if (!options){
-//    return -1;
-//  }
-//
-//  auto controller = std::make_unique<srp::ui_control_client>(options.value());
-//
-//  srp::controller_callbacks callbacks;
-//  callbacks.add_callback(check_device, [](auto const &message){
-//    auto [check, who] = extract_response<ClientCheckResponse>(message);
-//    ClientResponse clr;
-//    std::string info = check.info();
-//    LOGD << "Receive CHECK response from " << who << " with value: " << check.check_ok() << " " << check.info();
-//  });
-//
-//  controller->start(callbacks);
+  if (argc < 2) {
+    LOGE << "Option file is required. Use ./app option.json.";
+    return -1;
+  }
+  auto json = srp::IoUtils::read_json(argv[1]);
+  auto options = srp::ProtoUtils::message_from_json<UiControlOption>(json);
+
+  if (!options){
+    return -1;
+  }
+
+  auto controller = std::make_unique<srp::ui_control_client>(options.value());
+
+  srp::controller_callbacks callbacks;
+  callbacks.add_callback(check_device, [](auto const &message){
+    auto [check, who] = extract_response<ClientCheckResponse>(message);
+    ClientResponse clr;
+    std::string info = check.info();
+    LOGD << "Receive CHECK response from " << who << " with value: " << check.check_ok() << " " << check.info();
+  });
+
+  controller->start(callbacks);
 
   QApplication app(argc, argv);
   QQmlApplicationEngine engine;
 
-  UiAppCore core;
+  UiAppCore core(std::move(controller), options.value());
   QQmlContext *context = engine.rootContext();
   context->setContextProperty("baseConnections", &core);
 

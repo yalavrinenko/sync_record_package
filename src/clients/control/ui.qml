@@ -212,6 +212,9 @@ ApplicationWindow
         onRecordTimerEvent: {
             totalRecTime.text = elapsedTime
         }
+    }
 
+    onClosing: {
+        baseConnections.stopControl()
     }
 }

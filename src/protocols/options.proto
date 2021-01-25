@@ -35,4 +35,6 @@ message UiControlOption{
 
   ControlRole role = 1;
   ControlServerOption server = 2;
+
+  string record_path_template = 3;
 }

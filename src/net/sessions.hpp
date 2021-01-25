@@ -70,6 +70,11 @@ namespace srp {
       return {};
     }
 
+    void close_session() {
+      switch_state(connection_state::closed);
+      comm_->terminate();
+    }
+
     ~base_session();
 
   protected:

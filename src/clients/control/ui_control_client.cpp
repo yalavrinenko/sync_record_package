@@ -58,6 +58,7 @@ void srp::ui_control_client::start(const srp::controller_callbacks &callbacks) {
 
 void srp::ui_control_client::stop() {
   accept_log_ = false;
+  session_->close_session();
   log_thread_.get();
 }
 
