@@ -50,5 +50,8 @@ int srp::ui_back::start_ui(int argc, char **argv) {
   context->setContextProperty("baseConnections", &core);
 
   engine.load(QUrl(QStringLiteral("/home/yalavrinenko/Files/git/sync_record_package/src/clients/control/ui.qml")));
+
+  core.after_load_init();
+
   return app.exec();
 }

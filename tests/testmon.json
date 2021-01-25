@@ -3,5 +3,7 @@
   "server": {
     "host": "127.0.0.1",
     "port": 14488
-  }
+  },
+  "record_path_template": "demonstration",
+  "sync_point_interval_millis": 5000
 }

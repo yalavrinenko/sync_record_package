@@ -122,6 +122,7 @@ ApplicationWindow
                     onClicked: {
                         baseConnections.startRecording();
                         mainTimer.running = true
+                        recordMonitoring.running = true
                     }
                 }
 
@@ -130,6 +131,7 @@ ApplicationWindow
                     onClicked: {
                         baseConnections.stopRecording();
                         mainTimer.running = false
+                        recordMonitoring.running = false
                     }
                 }
 
@@ -138,6 +140,7 @@ ApplicationWindow
                     onClicked: {
                         baseConnections.startSyncRecording();
                         syncTimer.running = true;
+                        nextSyncPointTimer.running = true
                     }
                 }
 
@@ -146,6 +149,7 @@ ApplicationWindow
                     onClicked: {
                         baseConnections.stopSyncRecording();
                         syncTimer.running = false;
+                        nextSyncPointTimer.running = false
                     }
                 }
             }
@@ -211,6 +215,21 @@ ApplicationWindow
 
         onRecordTimerEvent: {
             totalRecTime.text = elapsedTime
+        }
+
+        onSyncTimerEvent: {
+            syncRecTime.text = elapsedTime
+        }
+
+        onShowSyncPointId: {
+            syncRecPoint.text = syncId.toString()
+        }
+
+        onStopTimers: {
+            mainTimer.running = false
+            syncTimer.running = false
+            nextSyncPointTimer.running = false
+            recordMonitoring.running = false
         }
     }
 

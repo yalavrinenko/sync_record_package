@@ -37,4 +37,5 @@ message UiControlOption{
   ControlServerOption server = 2;
 
   string record_path_template = 3;
+  int64  sync_point_interval_millis = 4;
 }
