@@ -93,3 +93,14 @@ void UiAppCore::sendProbSignal() {
 void UiAppCore::after_load_init() {
   emit setupSyncSenderTimer(options_.sync_point_interval_millis());
 }
+void UiAppCore::add_log_info(long device_key, const std::string& formatted_message) {
+  emit showCaptureLog(device_key, QString::fromStdString(formatted_message));
+}
+std::unique_ptr<srp::ui_control_client> &UiAppCore::control() {
+  return ui_control_;
+}
+void UiAppCore::checkSignal() {
+  if (ui_control_){
+    ui_control_->send_message(srp::ActionMessageBuilder::check_client());
+  }
+}

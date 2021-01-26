@@ -23,6 +23,10 @@ public:
 
   void after_load_init();
 
+  void add_log_info(long device_key, const std::string& formatted_message);
+
+  std::unique_ptr<srp::ui_control_client>& control();
+
   ~UiAppCore() override;
 
   Q_INVOKABLE void timerRecordEvent();
@@ -34,6 +38,7 @@ public:
   Q_INVOKABLE void sendProbSignal();
   Q_INVOKABLE void startSyncRecording();
   Q_INVOKABLE void stopSyncRecording();
+  Q_INVOKABLE void checkSignal();
 
   signals:
       void recordTimerEvent(QString elapsedTime);
@@ -41,6 +46,8 @@ public:
       void syncTimerEvent(QString elapsedTime);
       void showSyncPointId(unsigned long syncId);
       void stopTimers();
+
+      void showCaptureLog(long key, QString message);
 
 protected:
   std::optional<std::chrono::high_resolution_clock::time_point> main_record_start_{};

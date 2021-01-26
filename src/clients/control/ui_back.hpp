@@ -8,7 +8,7 @@
 namespace srp {
   class ui_back {
   public:
-    int start_ui(int argc, char **argv);
+    static int start_ui(int argc, char **argv);
   };
 }
 
