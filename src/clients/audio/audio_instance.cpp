@@ -11,6 +11,7 @@
 #include <utils/ffmpeg_io/ffmpeg_reader.hpp>
 #include <utils/ffmpeg_io/ffmpeg_writer.hpp>
 #include <utils/logger.hpp>
+#include <utils/io.hpp>
 
 using namespace srp;
 
@@ -29,22 +30,7 @@ public:
     double fps;
   };
 
-  struct timestamp {
-  public:
-    [[nodiscard]] auto const &ts() const {
-      std::lock_guard lg(lock_);
-      return entry_;
-    }
-
-    void update(timestamp_entry const &rhs) {
-      std::lock_guard lg(lock_);
-      entry_ = rhs;
-    }
-
-  private:
-    mutable std::mutex lock_;
-    timestamp_entry entry_{};
-  };
+  using timestamp = srp::IoUtils::tsafe_timestamp<timestamp_entry>;
 
   struct io_block {
     io_block(std::string const &format, std::string const &device, std::string const &outpath, std::string const &stampspath,

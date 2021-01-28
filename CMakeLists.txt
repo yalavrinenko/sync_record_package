@@ -63,9 +63,11 @@ add_subdirectory(src/clients/control)
 
 add_subdirectory(src/clients/audio)
 
+add_subdirectory(src/clients/bitalino)
+
 add_executable(capture_client src/clients/capture_client.cpp)
 target_link_libraries(capture_client ffmpeg_io ${CLIENT_COMMON_LIB}
-        audio_instance)
+        audio_instance bitalino_instance)
 
 add_executable(control_client src/clients/control.cpp)
 target_link_libraries(control_client ui_control ${CLIENT_COMMON_LIB})

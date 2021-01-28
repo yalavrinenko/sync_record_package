@@ -118,6 +118,24 @@ namespace srp {
       while (std::getline(in, line)) { json += line + "\n"; }
       return json;
     }
+
+    template<typename timestamp_entry>
+    struct tsafe_timestamp {
+    public:
+      [[nodiscard]] auto const &ts() const {
+        std::lock_guard lg(lock_);
+        return entry_;
+      }
+
+      void update(timestamp_entry const &rhs) {
+        std::lock_guard lg(lock_);
+        entry_ = rhs;
+      }
+
+    private:
+      mutable std::mutex lock_;
+      timestamp_entry entry_{};
+    };
   };
 };// namespace srp
 

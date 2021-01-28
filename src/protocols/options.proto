@@ -26,6 +26,24 @@ message AudioCaptureOptions{
   uint64 sample_rate = 4;
 }
 
+message BitalinoCaptureOptions{
+  string device = 1;
+  uint32 block_size = 4;
+
+  enum TsMode{
+    undefined = 0;
+    equal = 1;
+    stepped = 2;
+  }
+
+  TsMode timestamp_mode = 5;
+  repeated int32 channels = 6;
+
+
+  string filetype = 2;
+  string root = 3;
+}
+
 message UiControlOption{
   enum ControlRole{
     undefined = 0;
