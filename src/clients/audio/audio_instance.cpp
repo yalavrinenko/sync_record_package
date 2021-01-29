@@ -46,10 +46,10 @@ public:
                                                                           srp::ffmpeg_io_container::ffmpeg_stream::stream_options::stream_type::audio,
                                                                       .bitrate = copt.bitrate(),
                                                                       .pts_step = static_cast<size_t>(raw_frame_dpts),
-                                                                      .audio_opt = {.sample_rate = static_cast<int>(copt.sample_rate())}};
+                                                                      .audio_opt = {.sample_rate = static_cast<int>(copt.sampling_rate())}};
       output.create_stream(options);
 
-      timestamps << "#Frame\tTimestamp\tPointId" << std::endl;
+      timestamps << "#Frame\tTimestamp[sec]\tPointId" << std::endl;
     }
     ffmpeg_reader input;
     ffmpeg_writer output;
@@ -96,25 +96,6 @@ private:
     LOGD << "Stop recording on device " << io->input.source().name << ". Captured " << info.frames;
     return info;
   }
-  static std::string time_point_to_string(std::chrono::system_clock::time_point const &tp) {
-    using namespace std;
-    using namespace std::chrono;
-
-    auto ttime_t = system_clock::to_time_t(tp);
-    auto tp_sec = system_clock::from_time_t(ttime_t);
-    milliseconds ms = duration_cast<milliseconds>(tp - tp_sec);
-
-    std::tm *ttm = localtime(&ttime_t);
-
-    char const *date_time_format = "%Y-%m-%d_%H:%M:%S";
-
-    char time_str[64];
-
-    strftime(time_str, sizeof(time_str), date_time_format, ttm);
-
-    string result(time_str);
-    return result;
-  }
 
   AudioCaptureOptions options_;
 
@@ -158,7 +139,7 @@ std::pair<size_t, std::chrono::duration<double>> audio_instance::audio_io::stop_
   }
 }
 std::pair<std::string, std::string> audio_instance::audio_io::start_recording(std::filesystem::path const &path_template) {
-  auto timepoint = time_point_to_string(std::chrono::system_clock::now());
+  auto timepoint = srp::DataUtils::time_point_to_string(std::chrono::system_clock::now());
   using namespace std::string_literals;
 
   auto basepath = options_.root() / path_template;
@@ -198,7 +179,7 @@ std::pair<bool, std::string> audio_instance::audio_io::make_check() {
 
     std::ostringstream oss;
     oss << "Perform check for device " << options_.device() << " [captured via " << options_.iformat() << "].\n";
-    oss << "Capture " << check_info.frames << " frames [" << check_info.duration.count() << " seconds] at " << options_.sample_rate() << " smpl/s\n";
+    oss << "Capture " << check_info.frames << " frames [" << check_info.duration.count() << " seconds] at " << options_.sampling_rate() << " smpl/s\n";
     oss << "Stored to " << check_output << " and " << stamp_output << std::endl;
 
     LOGD << oss.str();

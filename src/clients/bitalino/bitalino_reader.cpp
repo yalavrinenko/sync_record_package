@@ -3,6 +3,7 @@
 //
 
 #include "bitalino_reader.hpp"
+#include <thread>
 #include <sstream>
 
 srp::bitalino_reader::bitalino_reader(std::string addr, size_t freq, size_t block_size, std::vector<int> channels)
@@ -28,4 +29,9 @@ std::string srp::bitalino_reader::device_info() const {
   std::ostringstream oss;
   oss << "Bitalino device with address " << addr_ << ". Device version " << device_->version() <<".";
   return oss.str();
+}
+srp::bitalino_reader::~bitalino_reader() {
+  device_.reset(nullptr);
+  using namespace std::chrono_literals;
+  std::this_thread::sleep_for(2s);
 }

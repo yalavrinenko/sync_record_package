@@ -23,12 +23,13 @@ message AudioCaptureOptions{
   string root = 8;
 
   uint64 bitrate = 3;
-  uint64 sample_rate = 4;
+  uint64 sampling_rate = 4;
 }
 
 message BitalinoCaptureOptions{
   string device = 1;
   uint32 block_size = 4;
+  uint32 sampling_rate = 7;
 
   enum TsMode{
     undefined = 0;
@@ -38,7 +39,6 @@ message BitalinoCaptureOptions{
 
   TsMode timestamp_mode = 5;
   repeated int32 channels = 6;
-
 
   string filetype = 2;
   string root = 3;

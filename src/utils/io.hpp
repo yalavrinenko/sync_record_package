@@ -19,7 +19,7 @@ namespace srp {
 
     struct IoParameters {
       static constexpr auto AWAIT_TIMEOUT() {
-        return std::chrono::milliseconds(2000);
+        return std::chrono::milliseconds(20000);
       }
     };
 
@@ -136,6 +136,28 @@ namespace srp {
       mutable std::mutex lock_;
       timestamp_entry entry_{};
     };
+  };
+
+  struct DataUtils{
+    static std::string time_point_to_string(std::chrono::system_clock::time_point const &tp) {
+      using namespace std;
+      using namespace std::chrono;
+
+      auto ttime_t = system_clock::to_time_t(tp);
+      auto tp_sec = system_clock::from_time_t(ttime_t);
+      milliseconds ms = duration_cast<milliseconds>(tp - tp_sec);
+
+      std::tm *ttm = localtime(&ttime_t);
+
+      char const *date_time_format = "%Y-%m-%d_%H:%M:%S";
+
+      char time_str[64];
+
+      strftime(time_str, sizeof(time_str), date_time_format, ttm);
+
+      string result(time_str);
+      return result;
+    }
   };
 };// namespace srp
 

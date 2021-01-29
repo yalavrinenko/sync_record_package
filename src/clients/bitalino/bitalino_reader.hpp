@@ -22,6 +22,8 @@ namespace srp{
 
     [[nodiscard]] auto const& address() const { return addr_; }
     [[nodiscard]] auto block_size() const { return data_block_.size(); }
+
+    ~bitalino_reader();
   private:
     std::unique_ptr<BITalino> device_;
     BITalino::VFrame data_block_;

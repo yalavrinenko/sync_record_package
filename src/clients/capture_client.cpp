@@ -3,12 +3,10 @@
 //
 
 #include "audio/audio_instance.hpp"
+#include "bitalino/bitalino_instance.hpp"
 #include "netclient.hpp"
-#include <algorithm>
 #include <filesystem>
-#include <fstream>
 #include <functional>
-#include <future>
 #include <iterator>
 #include <map>
 #include <utils/logger.hpp>
@@ -31,6 +29,7 @@ private:
     using build_function = std::function<std::unique_ptr<srp::capture_i>(srp::OptionEntry const &)>;
     static std::map<std::string, build_function> builders{
         {"audio"s, InstanceBuilder::builder_entry<srp::AudioCaptureOptions, srp::audio_instance>()},
+        {"bitalino"s, InstanceBuilder::builder_entry<srp::BitalinoCaptureOptions, srp::bitalino_instance>()},
     };
     return builders;
   }
