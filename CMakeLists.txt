@@ -23,7 +23,7 @@ set(SERVER_LIBS ${SERVER_LIBS} Boost::log Boost::log_setup Boost::thread Boost::
 protobuf_generate_cpp(SESSION_PROTO_SRCS SESSION_PROTO_HDRS ./src/protocols/session.proto)
 protobuf_generate_cpp(CLIENT_OPTION_PROTO_SRCS CLIENT_OPTION_PROTO_HDRS ./src/protocols/options.proto)
 
-set(SERVER_SRC ${SESSION_PROTO_SRCS}
+set(SERVER_SRC ${SESSION_PROTO_SRCS} ${CLIENT_OPTION_PROTO_SRCS}
         src/server/control_server.cpp
         src/net/sessions.cpp
         src/net/sessions.hpp src/server/server_acceptor.cpp
@@ -65,12 +65,12 @@ add_subdirectory(src/clients/audio)
 
 add_subdirectory(src/clients/bitalino)
 
-add_executable(capture_client src/clients/capture_client.cpp)
+add_executable(capture_client ${CLIENT_OPTION_PROTO_SRCS} src/clients/capture_client.cpp)
 target_link_libraries(capture_client ffmpeg_io
         audio_instance bitalino_instance
         ${CLIENT_COMMON_LIB})
 
-add_executable(control_client src/clients/control.cpp)
+add_executable(control_client ${CLIENT_OPTION_PROTO_SRCS} src/clients/control.cpp)
 target_link_libraries(control_client ui_control ${CLIENT_COMMON_LIB})
 
 
