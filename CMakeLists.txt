@@ -71,7 +71,7 @@ target_link_libraries(capture_client ffmpeg_io
         ${CLIENT_COMMON_LIB})
 
 add_executable(control_client ${CLIENT_OPTION_PROTO_SRCS} src/clients/control.cpp)
-target_link_libraries(control_client ui_control ${CLIENT_COMMON_LIB})
+target_link_libraries(control_client ui_control ${CLIENT_COMMON_LIB} Boost::log Boost::log_setup Boost::thread Boost::system)
 
 
 function(create_test_set test_name source_file)
