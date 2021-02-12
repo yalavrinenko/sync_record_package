@@ -1,0 +1,17 @@
+{
+  "tag": "bitalino",
+  "options": {
+    "@type": "type.googleapis.com/srp.BitalinoCaptureOptions",
+    "device": "20:18:08:08:02:01",
+    "block_size": 10,
+    "sampling_rate": 1000,
+    "timestamp_mode": "stepped",
+    "channels": [1,2,3,4,5,6],
+    "filetype": "dat",
+    "root": "/home/yalavrinenko/Files/git/sync_record_package/tests/output"
+  },
+  "control_server": {
+    "host": "127.0.0.1",
+    "port": 14488
+  }
+}

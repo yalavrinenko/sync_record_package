@@ -1,0 +1,17 @@
+{
+  "tag": "audio",
+  "options": {
+    "@type": "type.googleapis.com/srp.AudioCaptureOptions",
+    "device": "plughw:0,0",
+    "iformat": "alsa",
+    "input_stream_index": 0,
+    "filetype": "wav",
+    "root": "/home/yalavrinenko/Files/git/sync_record_package/tests/output",
+    "bitrate": 192000,
+    "sampling_rate": 44100
+  },
+  "control_server": {
+    "host": "192.168.50.33",
+    "port": 14488
+  }
+}
