@@ -69,6 +69,7 @@ add_executable(capture_client ${CLIENT_OPTION_PROTO_SRCS} src/clients/capture_cl
 target_link_libraries(capture_client ffmpeg_io
         audio_instance bitalino_instance
         ${CLIENT_COMMON_LIB})
+target_compile_definitions(capture_client PUBLIC "-DBOOST_ALL_DYN_LINK -DBOOST_LOG_USE_CHAR")
 
 add_executable(control_client ${CLIENT_OPTION_PROTO_SRCS} src/clients/control.cpp)
 target_link_libraries(control_client ui_control ${CLIENT_COMMON_LIB} Boost::log Boost::log_setup Boost::thread Boost::system)

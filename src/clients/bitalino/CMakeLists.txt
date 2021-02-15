@@ -12,3 +12,5 @@ add_library(bitalino_instance bitalino_instance.hpp bitalino_instance.cpp bitali
 target_link_libraries(bitalino_instance bitalino Boost::log Boost::log_setup)
 target_include_directories(bitalino_instance PUBLIC "${CMAKE_SOURCE_DIR}/3rd/bitalino"
         "${CMAKE_SOURCE_DIR}/src" "${CMAKE_BINARY_DIR}")
+
+target_compile_definitions(bitalino_instance PUBLIC "-DBOOST_ALL_DYN_LINK -DBOOST_LOG_USE_CHAR")
