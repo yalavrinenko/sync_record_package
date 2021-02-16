@@ -6,6 +6,8 @@
 #include <server/controlled_collection.hpp>
 
 int main(int argc, char** argv){
+  srp::ControlServerOption sopt;
+
   srp::control_server server(srp::control_server::connection_point{
     .host = "",
     .port = 14488

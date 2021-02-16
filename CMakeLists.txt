@@ -18,7 +18,12 @@ find_package(Protobuf REQUIRED)
 set(Protobuf_IMPORT_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/src/protocols")
 
 set(SERVER_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/src ${TARGET_INCLUDES} Boost::headers ${Protobuf_INCLUDE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+
 set(SERVER_LIBS ${SERVER_LIBS} Boost::log Boost::log_setup Boost::thread Boost::system protobuf::libprotobuf)
+
+if (WIN32)
+    set(SERVER_LIBS ${SERVER_LIBS} -lws2_32 -lwsock32)
+endif()
 
 protobuf_generate_cpp(SESSION_PROTO_SRCS SESSION_PROTO_HDRS ./src/protocols/session.proto)
 protobuf_generate_cpp(CLIENT_OPTION_PROTO_SRCS CLIENT_OPTION_PROTO_HDRS ./src/protocols/options.proto)
@@ -34,7 +39,7 @@ set(SERVER_SRC ${SESSION_PROTO_SRCS} ${CLIENT_OPTION_PROTO_SRCS}
         src/server/controlled_collection.hpp src/server/remote_control_client.cpp
         src/server/remote_control_client.hpp)
 
-set(SERVER_TARGET_LIB srp_server)
+set(SERVER_TARGET_LIB server_core)
 
 add_library(${SERVER_TARGET_LIB}  ${SERVER_SRC})
 target_link_libraries(${SERVER_TARGET_LIB} ${SERVER_LIBS})

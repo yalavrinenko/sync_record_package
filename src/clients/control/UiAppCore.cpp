@@ -21,7 +21,8 @@ auto duration_to_str(auto const &duration) {
   in_millis %= 60;
   auto ss = in_millis;
 
-  std::sprintf(time_str, "%02ld:%02ld:%02ld.%03ld", hh, mm, ss, millis);
+  std::sprintf(time_str, "%02lld:%02lld:%02lld.%03lld", static_cast<long long int>(hh), static_cast<long long int>(mm),
+               static_cast<long long int>(ss), static_cast<long long int>(millis));
   return std::string{time_str};
 }
 
