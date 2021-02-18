@@ -204,10 +204,10 @@ auto srp::bitalino_instance::bitalino_io::stop_recording() {
       LOGE << "Error during recordion. Reason: " << e.what();
 
       io_.reset(nullptr);
-      return std::pair{0ul, std::chrono::duration<double>{}};
+      return std::pair{static_cast<size_t>(0), std::chrono::duration<double>{}};
     }
   } else {
-    return std::pair{1ul, std::chrono::duration<double>{}};
+    return std::pair{static_cast<size_t>(1), std::chrono::duration<double>{}};
   }
 }
 auto srp::bitalino_instance::bitalino_io::send_sync_stamp(size_t sync_id) {
@@ -218,7 +218,7 @@ auto srp::bitalino_instance::bitalino_io::send_sync_stamp(size_t sync_id) {
 
     return std::tuple{current_frame.batch_id, current_frame.batch_ts, current_frame.batch_p_sec};
   } else {
-    return std::tuple{0ul, std::chrono::duration<double>{}, -1.0};
+    return std::tuple{static_cast<size_t>(0ul), std::chrono::duration<double>{}, -1.0};
   }
 }
 std::optional<srp::bitalino_instance::bitalino_io::timestamp_entry> srp::bitalino_instance::bitalino_io::recording_state() const {
