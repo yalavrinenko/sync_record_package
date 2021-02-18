@@ -61,7 +61,7 @@ void srp::ffmpeg_io_container::open_exist(std::string const &source, std::string
     throw context_allocation_fail();
   }
 
-  auto *ifmt = av_find_input_format("alsa");
+  auto *ifmt = av_find_input_format(format.c_str());
 
   auto ecode = avformat_open_input(&context_ptr_, source.c_str(), ifmt, nullptr);
   if (ecode != 0) {
