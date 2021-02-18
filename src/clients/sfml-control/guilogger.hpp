@@ -9,11 +9,13 @@
 #include <string>
 
 #include <SFML/Graphics/RenderWindow.hpp>
+#include <SFML/Window/Event.hpp>
 #include <algorithm>
 #include <future>
 #include <imgui.h>
 #include <mutex>
 #include <vector>
+#include <list>
 
 namespace gui {
 class ilogger_entry{
@@ -54,11 +56,14 @@ public:
       e->flush();
   }
 
+  using event_callback = std::function<void(std::shared_ptr<logger_window>)>;
+  void register_external_events(sf::Event::EventType event, event_callback cb);
+
   ~logger_window();
 protected:
   explicit logger_window(std::string name)
       : window_title_{std::move(name)},
-        window_(sf::VideoMode(1800, 1000), window_title_) {
+        window_(sf::VideoMode(1280, 720), window_title_) {
     init_window();
   }
 
@@ -66,12 +71,18 @@ protected:
 
   void events();
 
+  void call_callback(sf::Event::EventType type){
+    if (callbacks_.contains(type))
+      callbacks_[type](shared_from_this());
+  }
+
 private:
   std::string window_title_;
   sf::RenderWindow window_;
   sf::Clock delta_clock_;
   ImGuiContext* ctx_{nullptr};
-  std::vector<std::shared_ptr<ilogger_entry>> entries_;
+  std::list<std::shared_ptr<ilogger_entry>> entries_;
+  std::unordered_map<sf::Event::EventType, event_callback> callbacks_;
 };
 
 using plog_window = std::shared_ptr<logger_window>;
@@ -116,8 +127,10 @@ template <typename DataType, typename container=std::vector<DataType>>
 class cloned_data{
 public:
   void swap() {
-    std::swap(main_, tmp_);
-    tmp_.clear();
+    if (!tmp_.empty()) {
+      std::swap(main_, tmp_);
+      tmp_.clear();
+    }
   }
   container& main() { return main_; }
   container& tmp() { return tmp_;}

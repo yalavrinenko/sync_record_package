@@ -44,6 +44,9 @@ message ClientResponse{
 message ClientCheckResponse{
     bool check_ok = 1;
     string info = 2;
+
+    string type = 3;
+    string name = 4;
 }
 
 message ClientStartRecord{

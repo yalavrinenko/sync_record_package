@@ -41,6 +41,11 @@ void gui::logger_window::draw() {
     ImGui::SFML::Render(window_);
     window_.display();
 }
+
+void gui::logger_window::register_external_events(sf::Event::EventType event, event_callback cb) {
+  callbacks_[event] = std::move(cb);
+}
+
 void gui::logger_window::events() {
   sf::Event event{};
   while (window_.pollEvent(event)) {
@@ -48,6 +53,7 @@ void gui::logger_window::events() {
 
     if (event.type == sf::Event::Closed) {
       window_.close();
+      call_callback(event.type);
       std::exit(0);
     }
   }

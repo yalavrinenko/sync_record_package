@@ -10,7 +10,7 @@ void gui::text_entry::draw_impl() {
   std::lock_guard<std::mutex> lg(io_mutex);
   auto &datas_ = text_data_.main();
   for (auto const &[k, v]: datas_)
-    ImGui::Text("%s %s\n", k.c_str(), v.c_str());
+    ImGui::TextWrapped("%s %s\n", k.c_str(), v.c_str());
 }
 void gui::numeric_entry::draw_impl() {
   text_entry::draw_impl();

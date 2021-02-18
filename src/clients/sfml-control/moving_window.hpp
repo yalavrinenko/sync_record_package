@@ -6,12 +6,12 @@
 #define DSCS_MOVING_WINDOW_HPP
 #include <deque>
 
-class moving_window: public std::deque<double>{
+class moving_window: public std::deque<float>{
 public:
   explicit moving_window(unsigned long window_size): window_size_{window_size}{
   }
 
-  void add_data(double point){
+  void add_data(float point){
     if (this->size() >= window_size_)
       this->pop_front();
     this->push_back(point);
@@ -30,7 +30,7 @@ protected:
   size_t window_size_;
 
 private:
-  using base_container = std::deque<double>;
+  using base_container = std::deque<float>;
   using base_container::push_back;
   using base_container::push_front;
   using base_container::pop_front;

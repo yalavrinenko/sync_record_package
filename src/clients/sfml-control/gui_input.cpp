@@ -4,7 +4,7 @@
 #include "gui_input.hpp"
 
 #include <utility>
-gui::gui_controls::gui_controls(std::shared_ptr<struct logger_window> factory, std::string name) : ilogger_entry(
+gui::gui_controls::gui_controls(std::shared_ptr<logger_window> factory, std::string name) : ilogger_entry(
     std::move(factory), std::move(name)) {
 }
 
@@ -43,3 +43,26 @@ void gui::int_entry_control::draw() {
 gui::int_entry_control::int_entry_control(std::string text, gui::icontrol::setter_t getter,
                                           gui::icontrol::getter_t<int> setter, int min_value)
     : value_setter(std::move(getter), std::move(setter)), text_(std::move(text)), min_(min_value){}
+
+void gui::timer::draw() {
+  if (current_state_ == timer_state::running){
+    if (now() - begin_ >= duration_){
+      current_state_ = timer_state::stop;
+      if (on_time_)
+        on_time_(*this);
+    }
+  }
+}
+void gui::timer::start() {
+  current_state_ = timer_state::running;
+  begin_ = now();
+}
+void gui::timer::stop() {
+  current_state_ = timer_state::stop;
+}
+gui::timer::duration_t gui::timer::elapsed() const  {
+  if (current_state_ == timer_state::running)
+    return std::chrono::duration_cast<duration_t>(now() - begin_);
+  else
+    return duration_t{};
+}

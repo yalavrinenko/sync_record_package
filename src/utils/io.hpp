@@ -138,7 +138,7 @@ namespace srp {
     };
   };
 
-  struct DataUtils{
+  struct TimeDateUtils {
     static std::string time_point_to_string(std::chrono::system_clock::time_point const &tp) {
       using namespace std;
       using namespace std::chrono;
@@ -157,6 +157,24 @@ namespace srp {
 
       string result(time_str);
       return result;
+    }
+
+    static auto duration_to_str(auto const &duration) {
+      auto in_millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+
+      char time_str[256];
+
+      auto millis = in_millis % 1000;
+      in_millis /= 1000;
+      auto hh = (in_millis / (60 * 60));
+      in_millis %= 60 * 60;
+      auto mm = in_millis / 60;
+      in_millis %= 60;
+      auto ss = in_millis;
+
+      std::sprintf(time_str, "%02lld:%02lld:%02lld.%03lld", static_cast<long long int>(hh), static_cast<long long int>(mm),
+                   static_cast<long long int>(ss), static_cast<long long int>(millis));
+      return std::string{time_str};
     }
   };
 };// namespace srp

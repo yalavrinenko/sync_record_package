@@ -65,6 +65,10 @@ public:
   std::tuple<size_t, std::chrono::duration<double>, double> sync(size_t sync_id);
   std::optional<timestamp_entry> recording_state() const;
 
+  auto name() const {
+    return options_.device() + " via " + options_.iformat();
+  }
+
 private:
   static recording_info capture_function(std::unique_ptr<io_block> &io) {
     recording_info info{.frames = 0};
@@ -139,7 +143,7 @@ std::pair<size_t, std::chrono::duration<double>> audio_instance::audio_io::stop_
   }
 }
 std::pair<std::string, std::string> audio_instance::audio_io::start_recording(std::filesystem::path const &path_template) {
-  auto timepoint = srp::DataUtils::time_point_to_string(std::chrono::system_clock::now());
+  auto timepoint = srp::TimeDateUtils::time_point_to_string(std::chrono::system_clock::now());
   using namespace std::string_literals;
 
   auto basepath = options_.root() / path_template;
@@ -200,6 +204,8 @@ std::optional<ClientCheckResponse> srp::audio_instance::check() {
   ClientCheckResponse resp;
   resp.set_check_ok(state);
   resp.set_info(info);
+  resp.set_type("Ffmpeg audio");
+  resp.set_name(device_->name());
   return resp;
 }
 std::optional<ClientStartRecordResponse> srp::audio_instance::start_recording(const std::string &path_template) {
@@ -231,6 +237,7 @@ std::optional<ClientSyncResponse> srp::audio_instance::sync_time(size_t sync_poi
 
   if (fps < 0) { return {}; }
 
+  sync_r.set_sync_point(sync_point);
   sync_r.set_average_fps(fps);
   sync_r.set_frames(frame);
   sync_r.set_duration_sec(duration.count());

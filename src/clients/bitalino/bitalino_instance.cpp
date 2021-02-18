@@ -53,6 +53,10 @@ public:
   auto send_sync_stamp(size_t id);
   std::optional<timestamp_entry> recording_state() const;
 
+  auto name() const {
+    return opt_.device();
+  }
+
 private:
 
   auto init_io_block(std::string const& data_path, std::string const& split_path) {
@@ -170,7 +174,7 @@ auto srp::bitalino_instance::bitalino_io::check_device() {
   }
 }
 auto srp::bitalino_instance::bitalino_io::start_recording(const std::filesystem::path &path_template) {
-  auto timepoint = srp::DataUtils::time_point_to_string(std::chrono::system_clock::now());
+  auto timepoint = srp::TimeDateUtils::time_point_to_string(std::chrono::system_clock::now());
   using namespace std::string_literals;
 
   auto basepath = opt_.root() / path_template;
@@ -238,6 +242,8 @@ std::optional<srp::ClientCheckResponse> srp::bitalino_instance::check() {
   ClientCheckResponse resp;
   resp.set_check_ok(is_ok);
   resp.set_info(ack);
+  resp.set_type("Bitalino");
+  resp.set_name(device_->name());
   return resp;
 }
 
@@ -271,6 +277,7 @@ std::optional<srp::ClientSyncResponse> srp::bitalino_instance::sync_time(size_t 
 
   if (fps < 0) { return {}; }
 
+  r.set_sync_point(sync_point);
   r.set_average_fps(fps);
   r.set_frames(frame);
   r.set_duration_sec(duration.count());
