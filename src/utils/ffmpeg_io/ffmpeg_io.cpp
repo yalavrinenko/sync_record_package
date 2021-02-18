@@ -15,6 +15,13 @@ extern "C" {
 #include <libavdevice/avdevice.h>
 }
 
+namespace {
+  std::string ffmpeg_error2str(int err){
+    static char msg[AV_ERROR_MAX_STRING_SIZE];
+    return av_make_error_string(msg, AV_ERROR_MAX_STRING_SIZE, err);
+  }
+}
+
 srp::ffmpeg_io_container::ffmpeg_io_container(io_device source, Mode mode) : mode_{mode}, source_(std::move(source)) {
   avdevice_register_all();
   if (mode_ == Mode::read) {
@@ -58,7 +65,7 @@ void srp::ffmpeg_io_container::open_exist(std::string const &source, std::string
 
   auto ecode = avformat_open_input(&context_ptr_, source.c_str(), ifmt, nullptr);
   if (ecode != 0) {
-    LOGE << "Fail to open context for source " << source << ". Error code: " << ecode;
+    LOGE << "Fail to open context for source " << source << ". Error code: " << ecode << ". Detail: " << ffmpeg_error2str(ecode);
     throw context_open_fail(ecode);
   } else {
     LOGD << "Open container with format " << context_ptr_->iformat->long_name;
@@ -66,7 +73,7 @@ void srp::ffmpeg_io_container::open_exist(std::string const &source, std::string
 
   ecode = avformat_find_stream_info(context_ptr_, nullptr);
   if (ecode < 0) {
-    LOGW << "Unable to find stream info. Error code: " << ecode;
+    LOGW << "Unable to find stream info. Error code: " << ecode << ". Detail: " << ffmpeg_error2str(ecode);
   } else {
     LOGD << "Find " << context_ptr_->nb_streams << " streams.";
   }
@@ -75,13 +82,13 @@ void srp::ffmpeg_io_container::open_exist(std::string const &source, std::string
 void srp::ffmpeg_io_container::create(const std::string &source) {
   auto ecode = avformat_alloc_output_context2(&context_ptr_, nullptr, nullptr, source.c_str());
   if (ecode < 0) {
-    LOGE << "Fail to allocate output context. Code: " << ecode;
+    LOGE << "Fail to allocate output context. Code: " << ecode << ". Detail: " << ffmpeg_error2str(ecode);
     throw context_allocation_fail();
   }
 
   ecode = avio_open(&context_ptr_->pb, source.c_str(), AVIO_FLAG_WRITE);
   if (ecode < 0) {
-    LOGE << "Fail to open output file. Code: " << ecode;
+    LOGE << "Fail to open output file. Code: " << ecode << ". Detail: " << ffmpeg_error2str(ecode);
     throw std::runtime_error("Fail to open output.");
   }
 }
@@ -92,7 +99,7 @@ srp::ffmpeg_io_container::create_stream(const srp::ffmpeg_io_container::ffmpeg_s
   av_dump_format(context_ptr_, 0, source_.name.c_str(), 1);
   AVDictionary *opt = nullptr;
   auto ecode = avformat_write_header(context_ptr_, &opt);
-  if (ecode < 0) { LOGW << "Error in write header. Code: " << ecode; }
+  if (ecode < 0) { LOGW << "Error in write header. Code: " << ecode << ". Detail: " << ffmpeg_error2str(ecode); }
 
   return stream;
 }
@@ -123,7 +130,7 @@ srp::ffmpeg_io_container::ffmpeg_stream::ffmpeg_stream(AVFormatContext *linked_c
   avcodec_parameters_to_context(coder_context_, codec_par_);
   auto ecode = avcodec_open2(coder_context_, codec_, nullptr);
   if (ecode != 0) {
-    LOGE << "Fail to open codec. Error code: " << ecode;
+    LOGE << "Fail to open codec. Error code: " << ecode << ". Detail: " << ffmpeg_error2str(ecode);
     throw codec_open_fail();
   }
 
@@ -166,7 +173,7 @@ srp::ffmpeg_io_container::ffmpeg_stream::ffmpeg_stream(AVFormatContext *linked_c
   AVDictionary *opt = nullptr;
   auto ecode = avcodec_open2(coder_context_, codec_, &opt);
   if (ecode < 0) {
-    LOGE << "Fail to open encoder codec. Code: " << ecode;
+    LOGE << "Fail to open encoder codec. Code: " << ecode << ". Detail: " << ffmpeg_error2str(ecode);
     throw codec_open_fail();
   }
 

@@ -45,6 +45,4 @@ std::string srp::bitalino_reader::device_info() const {
 }
 srp::bitalino_reader::~bitalino_reader() {
   device_.reset(nullptr);
-  using namespace std::chrono_literals;
-  std::this_thread::sleep_for(2s);
 }
