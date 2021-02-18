@@ -9,7 +9,7 @@
 
 srp::bitalino_reader::bitalino_reader(std::string addr, size_t freq, size_t block_size, std::vector<int> channels)
     : data_block_(block_size), addr_{std::move(addr)}, sampling_rate_(freq), channels_{std::move(channels)} {
-  if (addr.empty()){
+  if (addr_.empty()){
     std::cerr << "No device address specified. Try to search bitalino devices..." << std::endl;
 
     auto devs = device_->find();
