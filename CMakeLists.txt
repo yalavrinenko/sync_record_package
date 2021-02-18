@@ -64,7 +64,7 @@ target_link_libraries(${CLIENT_COMMON_LIB} ${CLIENT_LIBS})
 target_include_directories(${CLIENT_COMMON_LIB} PUBLIC ${CLIENT_INCLUDES})
 target_compile_definitions(${CLIENT_COMMON_LIB} PUBLIC "-DBOOST_ALL_DYN_LINK -DBOOST_LOG_USE_CHAR")
 
-add_subdirectory(src/clients/control)
+add_subdirectory(src/clients/sfml-control)
 
 add_subdirectory(src/clients/audio)
 

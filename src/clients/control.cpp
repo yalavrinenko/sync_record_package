@@ -1,10 +1,16 @@
 //
 // Created by yalavrinenko on 20.01.2021.
 //
-#include "control/ui_back.hpp"
+#include <clients/sfml-control/guilogger.hpp>
 
 int main(int argc, char** argv){
-  srp::ui_back ui;
-  ui.start_ui(argc, argv);
+  auto gui_factory = gui::logger_environment::create();
+  auto window = gui_factory->create_logger("Ship_S");
+
+  while (true)
+    gui_factory->draw();
+
+  using namespace std::chrono_literals;
+  std::this_thread::sleep_for(12000s);
   return 0;
 }
