@@ -1,7 +1,7 @@
 {
   "role": "master",
   "server": {
-    "host": "192.168.50.33",
+    "host": "127.0.0.1",
     "port": 14488
   },
   "record_path_template": "demonstration",

@@ -19,3 +19,5 @@ target_include_directories(ui_control PUBLIC "${CMAKE_SOURCE_DIR}/src" "${CMAKE_
 #target_link_libraries(ui_control Boost::log Boost::log_setup)
 target_link_libraries(ui_control Boost::log Boost::log_setup Qt5::Widgets Qt5::Qml Qt5::Quick)
 target_compile_definitions(ui_control PUBLIC "-DBOOST_ALL_DYN_LINK -DBOOST_LOG_USE_CHAR")
+
+configure_file(ui.qml ${CMAKE_BINARY_DIR}/ui.qml COPYONLY)
