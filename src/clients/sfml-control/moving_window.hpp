@@ -8,7 +8,7 @@
 
 class moving_window: public std::deque<float>{
 public:
-  explicit moving_window(unsigned long window_size): window_size_{window_size}{
+  explicit moving_window(size_t window_size): window_size_{window_size}{
   }
 
   void add_data(float point){
@@ -17,7 +17,7 @@ public:
     this->push_back(point);
   }
 
-  unsigned long window_size() const {
+  size_t window_size() const {
     return window_size_;
   }
 

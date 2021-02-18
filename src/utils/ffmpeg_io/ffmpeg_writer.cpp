@@ -14,7 +14,7 @@ extern "C" {
 }
 srp::ffmpeg_writer::ffmpeg_writer(const std::string &source): container_({source, ""}, ffmpeg_io_container::Mode::write) {
   auto writer_function = [this]() {
-    auto frame_count = 0ul;
+    size_t frame_count = 0;
     while (be_active_){
       frame_queue_.wait_for_data();
 
