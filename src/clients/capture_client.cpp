@@ -68,12 +68,8 @@ int main(int argc, char **argv) {
     if (instance == nullptr){
       LOGE << "Fail to create capture instance.";
     } else {
-      client.add_client_instance(std::move(instance), serv_options);
+      client.add_and_run_client_instance(std::move(instance), serv_options);
     }
-
-    //wait for free device
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(2s);
   }
 
   LOGD << "Init " << client.instances_count() << " capture instance.";

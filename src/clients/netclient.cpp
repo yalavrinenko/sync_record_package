@@ -18,6 +18,8 @@ class srp::netclient::instance_handler {
 public:
   explicit instance_handler(std::unique_ptr<srp::capture_i> capture, ControlServerOption const &target_opt)
       : device_{std::move(capture)}, socket_(ios_) {
+    init_actions_callbacks();
+
     socket_.connect(boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string(target_opt.host()), target_opt.port()));
     if (socket_.is_open()) {
       auto comm = std::make_unique<netcomm>(std::move(socket_));
@@ -65,28 +67,30 @@ protected:
     return resp;
   }
 
-  std::string execute_command(ClientActionMessage const &command) {
-    static std::unordered_map<ActionType, std::function<std::string(void)>> actions{
-        {ActionType::check_device, [this, &command]() { return serialize_response(device_->check()); }},
+  void init_actions_callbacks(){
+    actions_ = std::unordered_map<ActionType, std::function<std::string(ClientActionMessage const&)>>{
+        {ActionType::check_device, [this](auto const &) { return serialize_response(device_->check()); }},
         {ActionType::start,
-         [this, &command]() {
-           auto meta = ProtoUtils::message_from_bytes<ClientStartRecord>(command.meta());
-           return serialize_response(device_->start_recording(meta.path_pattern()));
-         }},
-        {ActionType::stop, [this, &command]() { return serialize_response(device_->stop_recording()); }},
+                                   [this](auto const &command) {
+                                     auto meta = ProtoUtils::message_from_bytes<ClientStartRecord>(command.meta());
+                                     return serialize_response(device_->start_recording(meta.path_pattern()));
+                                   }},
+        {ActionType::stop, [this](auto const &command) { return serialize_response(device_->stop_recording()); }},
         {ActionType::sync_time,
-         [this, &command]() {
-           auto meta = ProtoUtils::message_from_bytes<ClientSync>(command.meta());
-           return serialize_response(device_->sync_time(meta.sync_point()));
-         }},
-        {ActionType::time, [this, &command]() { return serialize_response(device_->state()); }},
-        {ActionType::disconnect, [this, &command]() {
-           device_->stop_recording();
-           is_active_ = false;
-           return "";
-         }}};
+                                   [this](auto const &command) {
+                                     auto meta = ProtoUtils::message_from_bytes<ClientSync>(command.meta());
+                                     return serialize_response(device_->sync_time(meta.sync_point()));
+                                   }},
+        {ActionType::time, [this](auto const &command) { return serialize_response(device_->state()); }},
+        {ActionType::disconnect, [this](auto const &) {
+          device_->stop_recording();
+          is_active_ = false;
+          return "";
+        }}};
+  }
 
-    return actions[command.action()]();
+  std::string execute_command(ClientActionMessage const &command) {
+    return actions_[command.action()](command);
   }
 
   [[nodiscard]] ClientResponse create_response(ActionType trigger, const std::string &data) const {
@@ -99,6 +103,7 @@ protected:
 
 private:
   void main_loop() {
+    LOGD << "Start main loop for device ptr. " << device_.get() << " from handler " << this;
     while (!stop_main_loop && is_active()) {
       auto command = session_->receive_message<ClientActionMessage>(true);
       if (command) {
@@ -120,6 +125,8 @@ private:
 
   boost::asio::io_service ios_;
   boost::asio::ip::tcp::socket socket_;
+
+  std::unordered_map<ActionType, std::function<std::string(ClientActionMessage const&)>> actions_;
   size_t uid_;
 };
 
@@ -130,18 +137,20 @@ void srp::netclient::stop() {
 }
 
 void srp::netclient::run() {
-  auto exec = [](auto &handler) { return std::async(std::launch::async, [&handler]() { handler->run(); }); };
-
-  std::vector<std::future<void>> wthreads;
-  std::ranges::transform(instances_, std::back_inserter(wthreads), exec);
-  std::ranges::for_each(wthreads, [](auto &thread) { thread.get(); });
+  std::ranges::for_each(wthreads_, [](auto &thread) { thread.get(); });
 }
 
-[[maybe_unused]] bool srp::netclient::add_client_instance(std::unique_ptr<srp::capture_i> capture, ControlServerOption const &target_opt) {
+[[maybe_unused]] bool srp::netclient::add_and_run_client_instance(std::unique_ptr<srp::capture_i> capture, ControlServerOption const &target_opt) {
   auto check = capture->check();
 
   if (check && check->check_ok()) {
-    instances_.emplace_back(std::make_unique<instance_handler>(std::move(capture), target_opt));
+    auto exec = [](auto &handler) { return std::async(std::launch::async, [&handler]() {
+                                      handler->run();
+                                    }); };
+
+    auto &handler = instances_.emplace_back(std::make_unique<instance_handler>(std::move(capture), target_opt));
+    wthreads_.emplace_back(exec(handler));
+
     LOGD << "Add capture client to instances set.";
     return true;
   } else {

@@ -8,6 +8,9 @@
 #include <memory>
 #include <options.pb.h>
 #include <vector>
+#include <list>
+#include <future>
+
 namespace srp {
 
   class capture_i;
@@ -19,7 +22,7 @@ namespace srp {
     void run();
     void stop();
 
-    [[maybe_unused]] bool add_client_instance(std::unique_ptr<srp::capture_i> capture, ControlServerOption const &target_opt);
+    [[maybe_unused]] bool add_and_run_client_instance(std::unique_ptr<srp::capture_i> capture, ControlServerOption const &target_opt);
 
     [[nodiscard]] size_t instances_count() const;
 
@@ -27,7 +30,8 @@ namespace srp {
 
   private:
     class instance_handler;
-    std::vector<std::unique_ptr<instance_handler>> instances_;
+    std::list<std::unique_ptr<instance_handler>> instances_;
+    std::vector<std::future<void>> wthreads_;
   };
 };
 

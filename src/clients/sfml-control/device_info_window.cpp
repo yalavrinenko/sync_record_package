@@ -57,7 +57,6 @@ void gui::device_info_window::draw_impl() {
   key_value_print("\tAverage fps :", std::to_string(info.fps).c_str());
 
   if (info.state == device_ui_info::device_state::recording || info.state == device_ui_info::device_state::synced) {
-    key_value_print("\tAverage fps:", std::to_string(info.fps).c_str());
     ImGui::PlotLines("Fps timeline", &(info.fps_history[0]), info.fps_history.size());
   }
 
