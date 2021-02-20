@@ -160,25 +160,47 @@ void srp::sfml_control_instance::register_callbacks() {
   control_->start(callbacks);
 }
 void srp::sfml_control_instance::create_control_buttons() {
-  main_control_group_->add_control<gui::button_control>("Start recording", [this](auto const&){
+  buttons_[buttons_type::start] = main_control_group_->add_control<gui::button_control>("Start recording", [this](auto const&){
     this->start_recording();
+    buttons_[buttons_type::check]->disable();
+
+    buttons_[buttons_type::start_sync]->enable();
+    buttons_[buttons_type::stop]->enable();
+
+    buttons_[buttons_type::start]->disable();
   });
 
-  main_control_group_->add_control<gui::button_control>("Stop recording", [this](auto const&){
+  buttons_[buttons_type::stop] = main_control_group_->add_control<gui::button_control>("Stop recording", [this](auto const&){
     this->stop_recording();
+
+    buttons_[buttons_type::start_sync]->disable();
+    buttons_[buttons_type::stop_sync]->disable();
+    buttons_[buttons_type::stop]->disable();
+
+    buttons_[buttons_type::start]->enable();
+    buttons_[buttons_type::check]->enable();
   });
 
-  main_control_group_->add_control<gui::button_control>("Start sync. point insertion", [this](auto const&){
+  buttons_[buttons_type::start_sync] = main_control_group_->add_control<gui::button_control>("Start sync. point insertion", [this](auto const&){
     this->start_synchronization();
+    buttons_[buttons_type::start_sync]->disable();
+    buttons_[buttons_type::stop_sync]->enable();
   });
 
-  main_control_group_->add_control<gui::button_control>("Stop sync. point insertion", [this](auto const&){
+  buttons_[buttons_type::stop_sync] = main_control_group_->add_control<gui::button_control>("Stop sync. point insertion", [this](auto const&){
     this->stop_synchronization();
+
+    buttons_[buttons_type::start_sync]->enable();
+    buttons_[buttons_type::stop_sync]->disable();
   });
 
-  main_control_group_->add_control<gui::button_control>("Check all devices", [this](auto const&){
+  buttons_[buttons_type::check] = main_control_group_->add_control<gui::button_control>("Check all devices", [this](auto const&){
     control_->send_message(srp::ActionMessageBuilder::check_client());
   });
+
+  buttons_[buttons_type::start_sync]->disable();
+  buttons_[buttons_type::stop_sync]->disable();
+  buttons_[buttons_type::stop]->disable();
 }
 
 void srp::sfml_control_instance::create_timers() {

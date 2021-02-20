@@ -63,7 +63,7 @@ public:
 protected:
   explicit logger_window(std::string name)
       : window_title_{std::move(name)},
-        window_(sf::VideoMode(1280, 720), window_title_) {
+        window_(sf::VideoMode(1378, 850), window_title_) {
     init_window();
   }
 

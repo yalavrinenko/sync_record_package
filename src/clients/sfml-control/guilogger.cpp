@@ -9,8 +9,8 @@
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
 
-ImGuiContext* create_imgui_context(){
-  static auto* atlas = new ImFontAtlas();
+ImGuiContext *create_imgui_context() {
+  static auto *atlas = new ImFontAtlas();
   return ImGui::CreateContext(atlas);
 }
 
@@ -28,23 +28,26 @@ gui::logger_window::~logger_window() {
 }
 
 void gui::logger_window::draw() {
-    events();
+  events();
 
-    ImGui::SFML::Update(window_, delta_clock_.restart());
+  ImGui::SFML::Update(window_, delta_clock_.restart());
 
-    for (auto &entry : entries_)
-      if (entry) {
-        entry->draw();
-      }
+  auto font = ImGui::GetFont();
+  font->FontSize = 18;
 
-    window_.clear(); // fill background with color
-    ImGui::SFML::Render(window_);
-    window_.display();
+  ImGui::PushFont(font);
+
+  for (auto &entry : entries_)
+    if (entry) { entry->draw(); }
+
+  ImGui::PopFont();
+
+  window_.clear();// fill background with color
+  ImGui::SFML::Render(window_);
+  window_.display();
 }
 
-void gui::logger_window::register_external_events(sf::Event::EventType event, event_callback cb) {
-  callbacks_[event] = std::move(cb);
-}
+void gui::logger_window::register_external_events(sf::Event::EventType event, event_callback cb) { callbacks_[event] = std::move(cb); }
 
 void gui::logger_window::events() {
   sf::Event event{};
@@ -59,28 +62,30 @@ void gui::logger_window::events() {
   }
 }
 
-gui::ilogger_entry::ilogger_entry(std::shared_ptr<class logger_window> factory, std::string name):
-    linked_factory_{std::move(factory)}, name_{std::move(name)}{}
+gui::ilogger_entry::ilogger_entry(std::shared_ptr<class logger_window> factory, std::string name)
+    : linked_factory_{std::move(factory)}, name_{std::move(name)} {}
 void gui::ilogger_entry::draw() {
+  if (name_.find("Device") != std::string::npos) {
+    ImGui::SetNextWindowSize({400, 420}, ImGuiCond_FirstUseEver); //ImGuiCond_FirstUseEver
+  }
+
   ImGui::Begin(name_.c_str());
   draw_impl();
   ImGui::End();
 }
 
 void gui::logger_environment::draw() {
- // while (!is_stop_sig_) {
-    for (auto &window : windows_) {
-      if (window->is_open()) {
-        window->flush();
-        window->draw();
-      }
+  // while (!is_stop_sig_) {
+  for (auto &window : windows_) {
+    if (window->is_open()) {
+      window->flush();
+      window->draw();
     }
- // }
+  }
+  // }
 }
 void gui::logger_environment::flush() {
-  for (auto &window : windows_){
-    if (window->is_open()){
-      window->flush();
-    }
+  for (auto &window : windows_) {
+    if (window->is_open()) { window->flush(); }
   }
 }

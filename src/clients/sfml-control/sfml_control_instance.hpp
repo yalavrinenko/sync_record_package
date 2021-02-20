@@ -13,6 +13,7 @@ namespace gui{
   class gui_controls;
   class common_ui_info;
   class device_info_window;
+  class button_control;
 }
 
 namespace srp {
@@ -54,6 +55,12 @@ namespace srp {
     std::shared_ptr<gui::common_ui_info> info_;
 
     std::unordered_map<size_t, std::shared_ptr<gui::device_info_window>> devices_;
+
+    enum class buttons_type{
+      start, stop, start_sync, stop_sync, check
+    };
+
+    std::unordered_map<buttons_type, std::shared_ptr<gui::button_control>> buttons_;
   };
 }
 
