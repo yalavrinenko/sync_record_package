@@ -88,9 +88,10 @@ target_link_libraries(control_client ui_control ${CLIENT_COMMON_LIB} Boost::log 
 target_compile_definitions(control_client PUBLIC "-DBOOST_ALL_DYN_LINK -DBOOST_LOG_USE_CHAR")
 
 
-function(create_test_set test_name source_file)
+function(create_test_set test_name source_file required_libs)
     add_executable(${test_name} ${source_file})
-    target_link_libraries(${test_name} ${SERVER_TARGET_LIB} Boost::unit_test_framework)
+    target_link_libraries(${test_name} ${SERVER_TARGET_LIB} Boost::unit_test_framework ${required_libs})
+    target_include_directories(${test_name} PUBLIC "${CMAKE_SOURCE_DIR}/src")
 
     add_executable(${test_name}_address ${source_file})
     target_link_libraries(${test_name}_address ${SERVER_TARGET_LIB} Boost::unit_test_framework)
@@ -108,9 +109,11 @@ function(create_test_set test_name source_file)
     target_link_options(${test_name}_ub PRIVATE -fsanitize=undefined)
 endfunction()
 
-create_test_set(server_test_entry tests/server_test.cpp)
-create_test_set(client_test_entry tests/client_test.cpp)
-create_test_set(device_collection_test_entry  tests/device_collection_test.cpp)
+create_test_set(server_test_entry tests/server_test.cpp "")
+create_test_set(client_test_entry tests/client_test.cpp "")
+create_test_set(device_collection_test_entry  tests/device_collection_test.cpp "")
+
+create_test_set(ffmpeg_test_entry tests/ffmpeg_tests.cpp ffmpeg_io)
 
 
 add_executable(streams 3rd/stream_tests.cpp ${SESSION_PROTO_SRCS})
@@ -118,6 +121,6 @@ target_link_libraries(streams ${SERVER_LIBS})
 target_include_directories(streams PUBLIC ${SERVER_INCLUDES})
 target_compile_definitions(streams PUBLIC "-DBOOST_ALL_DYN_LINK -DBOOST_LOG_USE_CHAR")
 
-add_executable(capture_client_test tests/audio_client_test.cpp)
+add_executable(capture_client_test tests/audio_client_test.cpp tests/ffmpeg_tests.cpp)
 target_link_libraries(capture_client_test ffmpeg_io ${CLIENT_COMMON_LIB}
         audio_instance)

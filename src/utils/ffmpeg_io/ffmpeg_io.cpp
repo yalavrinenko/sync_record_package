@@ -146,12 +146,13 @@ srp::ffmpeg_io_container::ffmpeg_stream::~ffmpeg_stream() {
   if (is_writable_)
     write_frame(nullptr);
   if (coder_context_) avcodec_free_context(&coder_context_);
+
+  if (!is_writable_)
+    av_packet_free(&packet_);
 }
 
 bool srp::ffmpeg_io_container::ffmpeg_stream::extract_frame(AVFrame *frame) {
   int read_code;
-
-  av_frame_unref(frame);
 
   while ((read_code = avcodec_receive_frame(coder_context_, frame)) == AVERROR(EAGAIN)) {
     [[maybe_unused]] auto ecode = av_read_frame(linked_context_, packet_);
@@ -159,6 +160,7 @@ bool srp::ffmpeg_io_container::ffmpeg_stream::extract_frame(AVFrame *frame) {
       ecode = avcodec_send_packet(coder_context_, nullptr);
     else
       ecode = avcodec_send_packet(coder_context_, packet_);
+    av_packet_unref(packet_);
   }
 
   return read_code == AVERROR_EOF;// || frame->pts < 0;

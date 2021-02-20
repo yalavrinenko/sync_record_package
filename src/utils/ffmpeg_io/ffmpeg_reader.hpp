@@ -39,9 +39,11 @@ namespace srp {
 
     [[nodiscard]] ffmpeg_io_container::io_device const& source() const;
 
+    ~ffmpeg_reader();
+
   protected:
     bool eof_ = false;
-    AVFrame *local_frame_;
+    AVFrame *local_frame_ = nullptr;
     ffmpeg_io_container container_;
     std::unique_ptr<ffmpeg_io_container::ffmpeg_stream> stream_ = nullptr;
   };

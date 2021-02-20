@@ -22,3 +22,7 @@ void srp::ffmpeg_reader::select_stream(unsigned stream_id) { stream_ = container
 const srp::ffmpeg_io_container::io_device &srp::ffmpeg_reader::source() const {
   return container_.source();
 }
+srp::ffmpeg_reader::~ffmpeg_reader() {
+  if (local_frame_)
+    av_frame_free(&local_frame_);
+}
