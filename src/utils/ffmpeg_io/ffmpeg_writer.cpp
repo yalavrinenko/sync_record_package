@@ -34,18 +34,22 @@ srp::ffmpeg_writer::ffmpeg_writer(const std::string &source): container_({source
   be_active_ = true;
   writer_thread_ = std::async(std::launch::async, writer_function);
 }
+
 void srp::ffmpeg_writer::create_stream(const srp::ffmpeg_io_container::ffmpeg_stream::stream_options &options) {
   stream_ = container_.create_stream(options);
 }
+
 void srp::ffmpeg_writer::dequeue_frame(const srp::ffmpeg_writer::packed_frame& pframe) {
   frame_queue_.push(pframe);
 }
+
 srp::ffmpeg_writer::~ffmpeg_writer() {
   be_active_ = false;
   frame_queue_.kill();
   auto writen = writer_thread_.get();
   LOGD << "Write " << writen << " frames to " << stream_->context()->url;
 }
+
 void srp::ffmpeg_writer::packed_frame::release() {
   av_frame_free(&frame);
 }

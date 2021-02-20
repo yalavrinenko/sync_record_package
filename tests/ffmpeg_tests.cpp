@@ -47,26 +47,29 @@ BOOST_AUTO_TEST_CASE(Read_dummy_frames) {
   LOGD << frame_index;
 }
 
-BOOST_AUTO_TEST_CASE(Read_nonfree_frames) {
+BOOST_AUTO_TEST_CASE(Read_native_frame) {
   srp::ffmpeg_io_container::io_device device{
       .name = "plughw:0,0",
       .format = "alsa",
   };
-  std::unique_ptr<srp::ffmpeg_reader> in;
-  BOOST_REQUIRE_NO_THROW(in = std::make_unique<srp::ffmpeg_reader>(device));
+  srp::ffmpeg_reader in(device);
 
-  in->select_stream(0);
+  in.select_stream(0);
 
   struct dummy_frame{
     dummy_frame(AVFrame* frame){
       frame_ = av_frame_clone(frame);
     }
+    ~dummy_frame(){
+      av_frame_free(&frame_);
+    }
     AVFrame *frame_;
   };
 
   for (auto i = 0; i < 10; ++i) {
-    auto f = in->read<dummy_frame>();
-    LOGD << f.frame_->pts << " " << f.frame_->pkt_dts << " " << f.frame_->pkt_duration << " " << f.frame_->linesize[0];
+    srp::native_audio_frame f;
+    in >> f;
+    LOGD << f.frame->pts << " " << f.frame->pkt_dts << " " << f.frame->pkt_duration << " " << f.frame->linesize[0];
   }
 
   LOGD << frame_index;
@@ -97,6 +100,7 @@ BOOST_AUTO_TEST_CASE(OpenCloseReadWrite){
           .sample_rate = 44100
       }
   };
+
   fw.create_stream(opt);
 
   for (auto i = 0; i < 100; ++i){

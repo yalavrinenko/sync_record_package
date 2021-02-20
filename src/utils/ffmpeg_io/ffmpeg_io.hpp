@@ -21,9 +21,13 @@ namespace srp {
   struct native_audio_frame{
     native_audio_frame() = default;
     explicit native_audio_frame(AVFrame* raw);
+    native_audio_frame(native_audio_frame const &rhs): native_audio_frame(rhs.frame){
+    }
     native_audio_frame(native_audio_frame&& rhs) noexcept{
       frame = rhs.frame; rhs.frame = nullptr;
     }
+
+    native_audio_frame& operator= (native_audio_frame const &rhs);
 
     native_audio_frame& operator= (native_audio_frame&& rhs) noexcept{
       release();

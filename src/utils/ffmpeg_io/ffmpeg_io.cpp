@@ -34,9 +34,10 @@ srp::ffmpeg_io_container::ffmpeg_io_container(io_device source, Mode mode) : mod
 srp::ffmpeg_io_container::~ffmpeg_io_container() {
   if (context_ptr_) {
 
-    if (mode_ == Mode::write)
+    if (mode_ == Mode::write) {
       av_write_trailer(context_ptr_);
-    else {
+      avio_close(context_ptr_->pb);
+    } else {
       avformat_close_input(&context_ptr_);
     }
 
@@ -145,6 +146,7 @@ srp::ffmpeg_io_container::ffmpeg_stream::ffmpeg_stream(AVFormatContext *linked_c
 srp::ffmpeg_io_container::ffmpeg_stream::~ffmpeg_stream() {
   if (is_writable_)
     write_frame(nullptr);
+
   if (coder_context_) avcodec_free_context(&coder_context_);
 
   if (!is_writable_)
@@ -267,10 +269,13 @@ srp::audio_frame::audio_frame(AVFrame *raw_frame)
 srp::native_audio_frame::native_audio_frame(AVFrame *raw) {
   frame = av_frame_clone(raw);
 }
-srp::native_audio_frame::~native_audio_frame() { release(); }
+srp::native_audio_frame::~native_audio_frame() {
+  release();
+}
+
 void srp::native_audio_frame::release() {
   if (frame) {
-    av_frame_unref(frame);
+    av_frame_free(&frame);
     frame = nullptr;
   }
 }
@@ -281,4 +286,9 @@ AVFrame *srp::native_audio_frame::to_avframe(size_t pts) const {
 }
 long long srp::native_audio_frame::pts_delta(const srp::native_audio_frame &rhs) const {
   return rhs.frame->pts - frame->pts;
+}
+srp::native_audio_frame &srp::native_audio_frame::operator=(const srp::native_audio_frame &rhs) {
+  release();
+  frame = av_frame_clone(rhs.frame);
+  return *this;
 }
