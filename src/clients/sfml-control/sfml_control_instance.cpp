@@ -181,13 +181,13 @@ void srp::sfml_control_instance::create_control_buttons() {
     buttons_[buttons_type::check]->enable();
   });
 
-  buttons_[buttons_type::start_sync] = main_control_group_->add_control<gui::button_control>("Start sync. point insertion", [this](auto const&){
+  buttons_[buttons_type::start_sync] = main_control_group_->add_control<gui::button_control>("Start synchronization", [this](auto const&){
     this->start_synchronization();
     buttons_[buttons_type::start_sync]->disable();
     buttons_[buttons_type::stop_sync]->enable();
   });
 
-  buttons_[buttons_type::stop_sync] = main_control_group_->add_control<gui::button_control>("Stop sync. point insertion", [this](auto const&){
+  buttons_[buttons_type::stop_sync] = main_control_group_->add_control<gui::button_control>("Stop synchronization", [this](auto const&){
     this->stop_synchronization();
 
     buttons_[buttons_type::start_sync]->enable();
