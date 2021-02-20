@@ -88,7 +88,7 @@ void srp::ffmpeg_io_container::create(const std::string &source) {
 
   ecode = avio_open(&context_ptr_->pb, source.c_str(), AVIO_FLAG_WRITE);
   if (ecode < 0) {
-    LOGE << "Fail to open output file. Code: " << ecode << ". Detail: " << ffmpeg_error2str(ecode);
+    LOGE << "Fail to open output file. " << source << " Code: " << ecode << ". Detail: " << ffmpeg_error2str(ecode);
     throw std::runtime_error("Fail to open output.");
   }
 }
