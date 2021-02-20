@@ -31,14 +31,14 @@ public:
     std::ofstream stamps;
     std::ofstream data;
 
-    std::unique_ptr<srp::bitalino_reader> device;
+    std::shared_ptr<srp::bitalino_reader> device;
 
     std::atomic<bool> is_recording;
     std::future<recording_info> record_thread;
 
     timestamp last_ts;
 
-    io_block(std::unique_ptr<srp::bitalino_reader> dev, std::filesystem::path const &data_path, std::filesystem::path const &split_path):
+    io_block(std::shared_ptr<srp::bitalino_reader> dev, std::filesystem::path const &data_path, std::filesystem::path const &split_path):
       stamps{split_path}, data{data_path}, device{std::move(dev)}{
     }
   };
@@ -58,13 +58,21 @@ public:
   }
 
 private:
+  template<typename ... dev_init_t>
+  static auto aquire_device(dev_init_t ... args){
+    static std::shared_ptr<srp::bitalino_reader> reader{ nullptr};
+    if (reader == nullptr)
+      reader = std::make_shared<srp::bitalino_reader>(args...);
+
+    return reader;
+  }
 
   auto init_io_block(std::string const& data_path, std::string const& split_path) {
     std::vector<int> channels;
     for (auto c : opt_.channels())
       channels.emplace_back(c - 1);
 
-    auto dev = std::make_unique<srp::bitalino_reader>(opt_.device(), opt_.sampling_rate(), opt_.block_size(), channels);
+    auto dev = aquire_device(opt_.device(), opt_.sampling_rate(), opt_.block_size(), channels);
     auto io = std::make_unique<io_block>(std::move(dev), data_path, split_path);
 
     io->stamps << "#BlockId\tTimestamp[millis]\tPointId" << std::endl;

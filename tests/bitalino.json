@@ -2,7 +2,7 @@
   "tag": "bitalino",
   "options": {
     "@type": "type.googleapis.com/srp.BitalinoCaptureOptions",
-    "device": "",
+    "device": "20:18:08:08:02:01",
     "block_size": 10,
     "sampling_rate": 1000,
     "timestamp_mode": "stepped",

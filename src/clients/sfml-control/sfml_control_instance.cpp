@@ -177,7 +177,7 @@ void srp::sfml_control_instance::create_control_buttons() {
   });
 
   main_control_group_->add_control<gui::button_control>("Check all devices", [this](auto const&){
-    LOGD << "Check all devices";
+    control_->send_message(srp::ActionMessageBuilder::check_client());
   });
 }
 

@@ -51,6 +51,13 @@ add_executable(${SERVER_TARGET}  src/server/server.cpp)
 target_link_libraries(${SERVER_TARGET} ${SERVER_TARGET_LIB})
 target_include_directories(${SERVER_TARGET} PUBLIC ${SERVER_INCLUDES})
 
+#SANITIZERS SECTIONS
+#target_compile_options(${SERVER_TARGET_LIB} PRIVATE -fsanitize=address)
+#target_link_options(${SERVER_TARGET_LIB} PRIVATE -fsanitize=address)
+#target_compile_options(${SERVER_TARGET} PRIVATE -fsanitize=address)
+#target_link_options(${SERVER_TARGET} PRIVATE -fsanitize=address)
+#SANITIZERS SECTIONS
+
 set(CLIENT_COMMON_LIB netclient)
 set(CLIENT_COMMON_SRC ${SESSION_PROTO_SRCS} ${CLIENT_OPTION_PROTO_SRCS}
         src/net/sessions.cpp src/net/netcomm.cpp

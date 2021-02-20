@@ -21,7 +21,9 @@ void srp::device_collection::signal_broadcast(srp::device_collection::signal_sen
 
   futures runner;
   runner.reserve(slaves_.size());
-  std::for_each(slaves_.begin(), slaves_.end(), [&runner, signal_sender](auto &slave) { runner.emplace_back(signal_sender(slave)); });
+  std::for_each(slaves_.begin(), slaves_.end(), [&runner, signal_sender](auto &slave) {
+    runner.emplace_back(signal_sender(slave));
+  });
 
   auto monitor_function = [this](auto &runner) {
     auto result = runner.second.wait_for(DeviceCollectionOpt::wait_timeout());
@@ -34,7 +36,14 @@ void srp::device_collection::signal_broadcast(srp::device_collection::signal_sen
 
   std::for_each(runner.begin(), runner.end(), monitor_function);
 }
-void srp::device_collection::exclude_slave(auto &slave) { slaves_.erase(std::find(slaves_.begin(), slaves_.end(), slave)); }
+void srp::device_collection::exclude_slave(auto &slave) {
+  if (std::find(slaves_.begin(), slaves_.end(), slave) != slaves_.end()) {
+    auto erased_slave = std::move(*std::find(slaves_.begin(), slaves_.end(), slave));
+    slaves_.erase(std::find(slaves_.begin(), slaves_.end(), slave));
+
+    removed_slaves_.template emplace_back(std::move(erased_slave));
+  }
+}
 
 template<typename proto_response_t>
 std::optional<srp::ClientResponse> puck_income_message(std::optional<proto_response_t> const &resp, size_t uid, srp::ActionType trigger) {

@@ -14,7 +14,7 @@ namespace srp{
   using namespace std::chrono_literals;
   struct DeviceCollectionOpt{
     static std::chrono::milliseconds wait_timeout() {
-      return std::chrono::milliseconds{1000};
+      return std::chrono::milliseconds{5000};
     }
   };
 
@@ -58,6 +58,8 @@ namespace srp{
     capture_controller master_ = nullptr;
 
     std::list<capture_device> slaves_;
+
+    std::list<capture_device> removed_slaves_; //TODO: think about correct device remove.
 
     std::list<capture_controller> monitors_;
     std::mutex slave_lock_;
