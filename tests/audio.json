@@ -2,11 +2,11 @@
   "tag": "audio",
   "options": {
     "@type": "type.googleapis.com/srp.AudioCaptureOptions",
-    "device": "plughw:0,0",
-    "iformat": "alsa",
+    "device": "audio=@device_cm_{33D9A762-90C8-11D0-BD43-00A0C911CE86}\\wave_{D0053DB3-DC65-4F3C-BBF1-1DB52D7E1E77}",
+    "iformat": "dshow",
     "input_stream_index": 0,
     "filetype": "wav",
-    "root": "/home/yalavrinenko/Files/git/sync_record_package/tests/output",
+    "root": "C:\\Users\\lavri\\Desktop\\demo",
     "bitrate": 192000,
     "sampling_rate": 44100
   },

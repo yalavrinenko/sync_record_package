@@ -6,7 +6,7 @@ find_package(ImGui-SFML REQUIRED)
 find_package(Boost COMPONENTS log log_setup REQUIRED)
 
 add_library(ui_control gui_entries.cpp gui_input.cpp guilogger.cpp ../control/ui_control_client.cpp sfml_control_instance.cpp sfml_control_instance.hpp common_info_window.cpp common_info_window.hpp device_info_window.cpp device_info_window.hpp)
-target_include_directories(ui_control PUBLIC "${CMAKE_SOURCE_DIR}/src" "${CMAKE_BINARY_DIR}")
+target_include_directories(ui_control PUBLIC "${CMAKE_SOURCE_DIR}/src" "${CMAKE_BINARY_DIR}"  "${Protobuf_INCLUDE_DIR}")
 
 target_link_libraries(ui_control Boost::log Boost::log_setup
         sfml-graphics sfml-window sfml-system ImGui-SFML::ImGui-SFML)

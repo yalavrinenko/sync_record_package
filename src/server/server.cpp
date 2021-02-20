@@ -6,6 +6,10 @@
 #include <server/controlled_collection.hpp>
 
 int main(int argc, char** argv){
+#ifdef WIN32
+  std::setlocale(LC_ALL, ".1251");
+  std::cout << "KOI test: " << " Тест поддержки кирилицы" << std::endl;
+#endif
   srp::ControlServerOption sopt;
 
   srp::control_server server(srp::control_server::connection_point{

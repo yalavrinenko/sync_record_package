@@ -48,6 +48,11 @@ auto create_client_instance(std::string const &json_options) {
 }
 
 int main(int argc, char **argv) {
+#ifdef WIN32
+  std::setlocale(LC_ALL, ".1251");
+  std::cout << "KOI test: " << " Тест поддержки кирилицы" << std::endl;
+#endif
+
   if (argc < 2) {
     LOGE << "No input files. Use ./capture_client option_path.json";
     std::exit(1);

@@ -149,7 +149,8 @@ namespace srp {
 
       std::tm *ttm = localtime(&ttime_t);
 
-      char const *date_time_format = "%Y-%m-%d_%H:%M:%S";
+      //fuck de win32
+      char const *date_time_format = "%Y-%m-%d_%H-%M-%S";
 
       char time_str[64];
 
