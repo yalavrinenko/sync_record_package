@@ -19,7 +19,7 @@ namespace srp{
       return communicate("v");
     }
 
-    std::string start_recording(std::string const& path){
+    std::string start_recording(std::filesystem::path const& path){
       communicate("T 0");
       return communicate((boost::format("R %1%") % path).str());
     }
