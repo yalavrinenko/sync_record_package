@@ -1,0 +1,15 @@
+{
+  "tag": "pupil",
+  "options": {
+    "@type": "type.googleapis.com/srp.PupilEyetrackerOption",
+    "pupil_capture_host": "127.0.0.1",
+    "pupil_capture_port": 50020,
+    "pupil_capture_bin": "",
+    "pupil_capture_wdir": "",
+    "root": "/home/yalavrinenko/Files/git/sync_record_package/tests/output"
+  },
+  "control_server": {
+    "host": "127.0.0.1",
+    "port": 14488
+  }
+}

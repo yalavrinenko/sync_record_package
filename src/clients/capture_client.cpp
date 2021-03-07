@@ -4,6 +4,7 @@
 
 #include "audio/audio_instance.hpp"
 #include "bitalino/bitalino_instance.hpp"
+#include "eye_tracker/pupil_eyetracker_instance.hpp"
 #include "netclient.hpp"
 #include <filesystem>
 #include <functional>
@@ -30,6 +31,7 @@ private:
     static std::map<std::string, build_function> builders{
         {"audio"s, InstanceBuilder::builder_entry<srp::AudioCaptureOptions, srp::audio_instance>()},
         {"bitalino"s, InstanceBuilder::builder_entry<srp::BitalinoCaptureOptions, srp::bitalino_instance>()},
+        {"pupil"s, InstanceBuilder::builder_entry<srp::PupilEyetrackerOption, srp::pupil_eyetracker_instance>()},
     };
     return builders;
   }

@@ -77,9 +77,11 @@ add_subdirectory(src/clients/audio)
 
 add_subdirectory(src/clients/bitalino)
 
+add_subdirectory(src/clients/eye_tracker)
+
 add_executable(capture_client ${CLIENT_OPTION_PROTO_SRCS} src/clients/capture_client.cpp)
 target_link_libraries(capture_client ffmpeg_io
-        audio_instance bitalino_instance
+        audio_instance bitalino_instance pupil_io_instance
         ${CLIENT_COMMON_LIB})
 target_compile_definitions(capture_client PUBLIC "-DBOOST_ALL_DYN_LINK -DBOOST_LOG_USE_CHAR")
 
@@ -123,4 +125,7 @@ target_compile_definitions(streams PUBLIC "-DBOOST_ALL_DYN_LINK -DBOOST_LOG_USE_
 
 add_executable(capture_client_test tests/audio_client_test.cpp tests/ffmpeg_tests.cpp)
 target_link_libraries(capture_client_test ffmpeg_io ${CLIENT_COMMON_LIB}
-        audio_instance)
+        audio_instance Boost::unit_test_framework)
+
+add_executable(pupil_test tests/pupil_test.cpp)
+target_link_libraries(pupil_test pupil_io_instance ${CLIENT_COMMON_LIB} Boost::unit_test_framework)

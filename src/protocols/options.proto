@@ -44,6 +44,14 @@ message BitalinoCaptureOptions{
   string root = 3;
 }
 
+message PupilEyetrackerOption{
+  string pupil_capture_host = 1;
+  int64 pupil_capture_port = 2;
+  string pupil_capture_bin = 4;
+  string pupil_capture_wdir = 5;
+  string root = 3;
+}
+
 message UiControlOption{
   enum ControlRole{
     undefined = 0;
