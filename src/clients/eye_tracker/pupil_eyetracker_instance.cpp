@@ -93,7 +93,7 @@ namespace srp {
 
   std::tuple<bool, std::chrono::milliseconds, std::string> pupil_eyetracker_instance::instance_implementation::check_device() {
     try {
-      start("check", "check.stap");
+      start("check", "check.stamp");
       auto version = io_->device.name();
 
       std::this_thread::sleep_for(std::chrono::seconds(1));

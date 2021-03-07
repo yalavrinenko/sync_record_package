@@ -21,7 +21,7 @@ namespace srp{
 
     std::string start_recording(std::filesystem::path const& path){
       communicate("T 0");
-      return communicate((boost::format("R %1%") % path).str());
+      return communicate((boost::format("R %1%") % path.generic_string()).str());
     }
     std::chrono::milliseconds stop_recording() {
       communicate("r");
