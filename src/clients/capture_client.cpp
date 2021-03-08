@@ -51,9 +51,10 @@ auto create_client_instance(std::string const &json_options) {
 
 int main(int argc, char **argv) {
 #ifdef WIN32
-  //std::locale::global(std::locale("en_US.utf8"));
+  auto locale = std::locale("");
+  std::locale::global(locale);
   //std::cout.imbue(std::locale());
-  std::cout << "KOI test: " << " Тест поддержки кирилицы" << std::endl;
+  std::cout << locale.name() << " test: " << " Тест поддержки кирилицы" << std::endl;
 #endif
 
   if (argc < 2) {

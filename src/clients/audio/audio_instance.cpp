@@ -145,14 +145,15 @@ std::pair<size_t, std::chrono::duration<double>> audio_instance::audio_io::stop_
 std::pair<std::string, std::string> audio_instance::audio_io::start_recording(std::filesystem::path const &path_template, std::string const& dev_id) {
   auto [output_path, stamp_path] = srp::PathUtils::create_file_path(options_.root(), path_template, dev_id, options_.filetype());
 
-  io_ = std::make_unique<io_block>(options_.iformat(), options_.device(), output_path, stamp_path, options_);
+  io_ = std::make_unique<io_block>(options_.iformat(), options_.device(), output_path.generic_string(),
+                                   stamp_path.generic_string(), options_);
 
   io_->record_thread = std::async(std::launch::async, [this]() {
     io_->is_rec = true;
     return capture_function(io_);
   });
 
-  return {output_path, stamp_path};
+  return {output_path.generic_string(), stamp_path.generic_string()};
 }
 std::pair<bool, std::string> audio_instance::audio_io::make_check() {
   try {

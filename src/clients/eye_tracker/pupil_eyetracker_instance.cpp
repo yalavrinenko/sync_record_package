@@ -142,8 +142,8 @@ namespace srp {
     auto state = impl_->start(output_path, stamp_path);
 
     if (state == "OK") {
-      rec_resp.add_data_path(output_path);
-      rec_resp.add_sync_point_path(stamp_path);
+      rec_resp.add_data_path(output_path.generic_string());
+      rec_resp.add_sync_point_path(stamp_path.generic_string());
     } else {
       rec_resp.add_data_path(state);
       rec_resp.add_sync_point_path(state);

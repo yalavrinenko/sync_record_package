@@ -106,7 +106,7 @@ std::string srp::pupil_eye_io::name() const {
 std::chrono::milliseconds srp::pupil_eye_io::timestamp() const {
   return std::chrono::duration_cast<std::chrono::milliseconds>(core_->recording_time());
 }
-std::filesystem::path srp::pupil_eye_io::start_recording(const std::filesystem::path &path) {
+std::string srp::pupil_eye_io::start_recording(const std::filesystem::path &path) {
   return core_->start_recording(path);
 }
 std::chrono::milliseconds srp::pupil_eye_io::stop_recording() {
