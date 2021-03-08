@@ -25,8 +25,6 @@ namespace srp {
 
     PupilEyetrackerOption option_;
     std::unique_ptr<instance_implementation> impl_;
-
-    size_t uid_{};
   };
 }
 

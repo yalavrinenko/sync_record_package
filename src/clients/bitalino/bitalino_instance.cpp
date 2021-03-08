@@ -48,7 +48,7 @@ public:
 
   auto check_device();
 
-  auto start_recording(std::filesystem::path const &path_template);
+  auto start_recording(std::filesystem::path const &path_template, std::string const& dev_id);
   auto stop_recording();
   auto send_sync_stamp(size_t id);
   std::optional<timestamp_entry> recording_state() const;
@@ -181,14 +181,8 @@ auto srp::bitalino_instance::bitalino_io::check_device() {
     return std::pair{false, "Bitalino raise exception[" + std::to_string(e.code) + "]. Message: " + std::string(e.getDescription())};
   }
 }
-auto srp::bitalino_instance::bitalino_io::start_recording(const std::filesystem::path &path_template) {
-  auto timepoint = srp::TimeDateUtils::time_point_to_string(std::chrono::system_clock::now());
-  using namespace std::string_literals;
-
-  auto basepath = opt_.root() / path_template;
-  basepath += "."s + timepoint + "."s;
-  auto output_path = basepath.string() + opt_.filetype();
-  auto stamp_path = basepath.string() + "stamp";
+auto srp::bitalino_instance::bitalino_io::start_recording(const std::filesystem::path &path_template, std::string const& dev_id) {
+  auto [output_path, stamp_path] = srp::PathUtils::create_file_path(opt_.root(), path_template, dev_id, opt_.filetype());
 
   io_ = init_io_block(output_path, stamp_path);
 
@@ -258,7 +252,7 @@ std::optional<srp::ClientCheckResponse> srp::bitalino_instance::check() {
 
 std::optional<srp::ClientStartRecordResponse> srp::bitalino_instance::start_recording(const std::string &path_template) {
   ClientStartRecordResponse r;
-  auto [output, stamp] = device_->start_recording(path_template);
+  auto [output, stamp] = device_->start_recording(path_template, std::to_string(uid()));
   r.add_data_path(output);
   r.add_sync_point_path(output);
 

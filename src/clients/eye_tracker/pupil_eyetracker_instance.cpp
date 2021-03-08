@@ -77,8 +77,12 @@ namespace srp {
 
     LOGD << "Start recording eyetracker data to " << record_dir << " with stamp file " << stamps;
 
-    is_recording_ = true;
-    return io_->device.start_recording(record_dir);
+    auto resp = io_->device.start_recording(record_dir);
+    if (resp == "OK")
+      is_recording_ = true;
+    else
+      is_recording_ = false;
+    return resp;
   }
   auto pupil_eyetracker_instance::instance_implementation::stop() {
     if (io_) {
@@ -112,7 +116,7 @@ namespace srp {
     return time;
   }
 
-  void srp::pupil_eyetracker_instance::init(size_t uid) { uid_ = uid; }
+  void srp::pupil_eyetracker_instance::init(size_t uid) { this->uid_ = uid; }
 
   std::optional<ClientCheckResponse> srp::pupil_eyetracker_instance::check() {
     auto [state, rec, addition_message] = impl_->check_device();
@@ -133,18 +137,17 @@ namespace srp {
   std::optional<ClientStartRecordResponse> srp::pupil_eyetracker_instance::start_recording(const std::string &path_template) {
     ClientStartRecordResponse rec_resp;
 
-    auto timepoint = srp::TimeDateUtils::time_point_to_string(std::chrono::system_clock::now());
-    using namespace std::string_literals;
-
-    auto basepath = std::filesystem::path(option_.root()) / path_template;
-    basepath += "."s + timepoint;
-    auto output_path = basepath.string();
-    auto stamp_path = basepath.string() + ".stamp";
+    auto [output_path, stamp_path] = srp::PathUtils::create_file_path(option_.root(), path_template, std::to_string(uid()), "");
 
     auto state = impl_->start(output_path, stamp_path);
 
-    rec_resp.add_data_path(output_path);
-    rec_resp.add_sync_point_path(stamp_path);
+    if (state == "OK") {
+      rec_resp.add_data_path(output_path);
+      rec_resp.add_sync_point_path(stamp_path);
+    } else {
+      rec_resp.add_data_path(state);
+      rec_resp.add_sync_point_path(state);
+    }
 
     return rec_resp;
   }

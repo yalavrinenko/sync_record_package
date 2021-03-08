@@ -60,7 +60,7 @@ public:
   };
 
   std::pair<bool, std::string> make_check();
-  std::pair<std::string, std::string> start_recording(std::filesystem::path const &path_template);
+  std::pair<std::string, std::string> start_recording(std::filesystem::path const &path_template, std::string const& dev_id);
   std::pair<size_t, std::chrono::duration<double>> stop_recording();
   std::tuple<size_t, std::chrono::duration<double>, double> sync(size_t sync_id);
   std::optional<timestamp_entry> recording_state() const;
@@ -142,14 +142,8 @@ std::pair<size_t, std::chrono::duration<double>> audio_instance::audio_io::stop_
     return {1, {}};
   }
 }
-std::pair<std::string, std::string> audio_instance::audio_io::start_recording(std::filesystem::path const &path_template) {
-  auto timepoint = srp::TimeDateUtils::time_point_to_string(std::chrono::system_clock::now());
-  using namespace std::string_literals;
-
-  auto basepath = options_.root() / path_template;
-  basepath += "."s + timepoint + "."s;
-  auto output_path = basepath.string() + options_.filetype();
-  auto stamp_path = basepath.string() + "stamp";
+std::pair<std::string, std::string> audio_instance::audio_io::start_recording(std::filesystem::path const &path_template, std::string const& dev_id) {
+  auto [output_path, stamp_path] = srp::PathUtils::create_file_path(options_.root(), path_template, dev_id, options_.filetype());
 
   io_ = std::make_unique<io_block>(options_.iformat(), options_.device(), output_path, stamp_path, options_);
 
@@ -197,7 +191,7 @@ std::pair<bool, std::string> audio_instance::audio_io::make_check() {
 
 void srp::audio_instance::init(size_t uid) {
   uid_ = uid;
-  LOGD << "Receive uid " << uid_;
+  LOGD << "Receive uid " << this->uid();
 }
 std::optional<ClientCheckResponse> srp::audio_instance::check() {
   auto [state, info] = device_->make_check();
@@ -211,7 +205,7 @@ std::optional<ClientCheckResponse> srp::audio_instance::check() {
 std::optional<ClientStartRecordResponse> srp::audio_instance::start_recording(const std::string &path_template) {
   ClientStartRecordResponse start_response;
 
-  auto [output, stamp] = device_->start_recording(path_template);
+  auto [output, stamp] = device_->start_recording(path_template, std::to_string(uid_));
 
   start_response.add_data_path(output);
   start_response.add_sync_point_path(stamp);

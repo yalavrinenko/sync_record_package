@@ -11,6 +11,7 @@
 #include <google/protobuf/util/json_util.h>
 #include <filesystem>
 #include <fstream>
+#include <boost/format.hpp>
 
 namespace srp {
   class message_parse_error : public std::exception {};
@@ -176,6 +177,25 @@ namespace srp {
       std::sprintf(time_str, "%02lld:%02lld:%02lld.%03lld", static_cast<long long int>(hh), static_cast<long long int>(mm),
                    static_cast<long long int>(ss), static_cast<long long int>(millis));
       return std::string{time_str};
+    }
+  };
+
+  struct PathUtils{
+    static auto create_file_path(std::filesystem::path const& root,
+                                 std::filesystem::path const &path_template,
+                                 std::string const& dev_id,
+                                 std::string const& extension){
+      auto timepoint = srp::TimeDateUtils::time_point_to_string(std::chrono::system_clock::now());
+      using namespace std::string_literals;
+
+      auto basepath = root / path_template;
+      auto path_base = boost::format("%1%.%2%.%3%.%4%") % basepath.generic_string() % dev_id % timepoint;
+      auto split_base = path_base;
+
+      auto output_path = (path_base % extension).str();
+      auto stamp_path = (split_base % "stamp").str();
+
+      return std::make_pair(std::filesystem::path(output_path), std::filesystem::path(stamp_path));
     }
   };
 };// namespace srp

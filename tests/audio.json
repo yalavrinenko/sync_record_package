@@ -6,7 +6,7 @@
     "iformat": "alsa",
     "input_stream_index": 0,
     "filetype": "wav",
-    "root": "../tests/output",
+    "root": "/home/yalavrinenko/Files/git/sync_record_package/tests/output",
     "bitrate": 192000,
     "sampling_rate": 44100
   },

@@ -8,6 +8,7 @@
 #include <../src/utils/logger.hpp>
 #include <../src/clients/eye_tracker/pupil_eye_io.hpp>
 #include <thread>
+#include <../src/utils/io.hpp>
 
 BOOST_AUTO_TEST_SUITE(PupilMain);
 
@@ -21,8 +22,14 @@ BOOST_AUTO_TEST_CASE(ConnectStartStop){
     std::this_thread::sleep_for(1s);
     std::cout << pupil.timestamp().count() << std::endl;
   }
-  LOGD << pupil.stop_recording();
+  LOGD << pupil.stop_recording().count();
 
+}
+
+BOOST_AUTO_TEST_CASE(PathUtilsTest){
+  auto [out, stp] = srp::PathUtils::create_file_path("/", "pathtmp", "0", "wav");
+  LOGD << out.string();
+  LOGD << stp.string();
 }
 
 BOOST_AUTO_TEST_SUITE_END();
