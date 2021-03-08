@@ -57,6 +57,9 @@ public:
     return opt_.device();
   }
 
+  auto const& current_io() const {
+    return io_;
+  }
 private:
   static auto& global_device() {
     static std::shared_ptr<srp::bitalino_reader> reader{ nullptr};
