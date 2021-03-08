@@ -34,7 +34,13 @@ srp::sfml_control_instance::sfml_control_instance(srp::UiControlOption options, 
   main_control_group_ = ui_->create_logger<gui::gui_controls>("Main control buttons");
 
   create_timers();
-  create_control_buttons();
+  if (opt_.role() != srp::UiControlOption_ControlRole_monitor) {
+    create_control_buttons();
+  } else {
+    auto dummy = main_control_group_->add_control<gui::button_control>("Available for master role only.", [this](auto const&){
+    });
+    dummy->disable();
+  }
   create_main_info();
 
   register_callbacks();
