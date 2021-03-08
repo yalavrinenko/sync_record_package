@@ -58,25 +58,35 @@ public:
   }
 
 private:
-  template<typename ... dev_init_t>
-  static auto aquire_device(dev_init_t ... args){
+  static auto& global_device() {
     static std::shared_ptr<srp::bitalino_reader> reader{ nullptr};
-    if (reader == nullptr)
-      reader = std::make_shared<srp::bitalino_reader>(args...);
-
     return reader;
   }
 
-  auto init_io_block(std::string const& data_path, std::string const& split_path) {
+  template<typename ... dev_init_t>
+  static auto aquire_device(dev_init_t ... args){
+    if (global_device() == nullptr)
+      global_device() = std::make_shared<srp::bitalino_reader>(args...);
+
+    return global_device();
+  }
+
+  auto open_reader(){
     std::vector<int> channels;
     for (auto c : opt_.channels())
       channels.emplace_back(c - 1);
 
     auto dev = aquire_device(opt_.device(), opt_.sampling_rate(), opt_.block_size(), channels);
+    return std::make_pair(dev, channels);
+  }
+
+  auto init_io_block(std::string const& data_path, std::string const& split_path) {
+    auto [dev, channels] = open_reader();
     auto io = std::make_unique<io_block>(std::move(dev), data_path, split_path);
 
     io->stamps << "#BlockId\tTimestamp[millis]\tPointId" << std::endl;
     io->data << "#BlockID\tFrameID\tTimestamp[millis]\tD0\tD1\tD2\tD3\t";
+
     for (auto c : channels)
       io->data << "A" + std::to_string(c + 1) << "\t";
     io->data << "\n";
@@ -108,6 +118,21 @@ private:
     }
   }
 
+  void try_reconnect(std::unique_ptr<io_block> &io){
+    global_device() = nullptr;
+    io->device = nullptr;
+
+    try {
+      LOGW << "Trying to reconnect bitalino device....";
+      auto [dev, _] = open_reader();
+      io->device = std::move(dev);
+    } catch (BITalino::Exception const &e){
+      LOGW << "Exception during reconnect. Code: " << e.code;
+      LOGW << "Wait 500ms for next reconnect attempt...";
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
+  }
+
   recording_info capture_function(std::unique_ptr<io_block> &io){
     recording_info rinfo{.capture_blocks = 0,
     .capture_time = {},
@@ -119,20 +144,29 @@ private:
     auto stime = std::chrono::high_resolution_clock::now();
     while (io->is_recording){
       auto acquire_start = std::chrono::high_resolution_clock::now();
-      auto [ts, frames] = io->device->acquire();
+      if (io->device != nullptr) {
+        try {
+          auto [ts, frames] = io->device->acquire();
 
-      store_frames(io, rinfo.capture_blocks, rinfo.frames, ts - stime, ts - acquire_start, frames);
+          store_frames(io, rinfo.capture_blocks, rinfo.frames, ts - stime, ts - acquire_start, frames);
 
-      timestamp_entry tentry{
-          .batch_id = rinfo.capture_blocks,
-          .batch_ts = ts - stime,
-          .batch_p_sec = frames.size() / std::chrono::duration_cast<std::chrono::duration<double>>(ts - acquire_start).count()
-      };
+          timestamp_entry tentry{.batch_id = rinfo.capture_blocks,
+                                 .batch_ts = ts - stime,
+                                 .batch_p_sec =
+                                     frames.size() / std::chrono::duration_cast<std::chrono::duration<double>>(ts - acquire_start).count()};
 
-      ++rinfo.capture_blocks;
-      rinfo.frames += frames.size();
+          ++rinfo.capture_blocks;
+          rinfo.frames += frames.size();
 
-      io->last_ts.update(tentry);
+          io->last_ts.update(tentry);
+        } catch (BITalino::Exception const &e) {
+          LOGW << "Catch exception in bitalino reader. Exception code: " << e.code;
+          if (e.code == BITalino::Exception::Code::DEVICE_NOT_IN_ACQUISITION) io->device->start();
+          else
+            try_reconnect(io);
+        }
+      } else
+        try_reconnect(io);
     }
     auto ftime = std::chrono::high_resolution_clock::now();
 

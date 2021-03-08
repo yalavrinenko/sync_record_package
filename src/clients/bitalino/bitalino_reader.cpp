@@ -25,9 +25,13 @@ srp::bitalino_reader::bitalino_reader(std::string addr, size_t freq, size_t bloc
   device_ = std::make_unique<BITalino>(addr_.c_str());
 }
 std::pair<std::chrono::high_resolution_clock::time_point, BITalino::VFrame const &> srp::bitalino_reader::acquire() {
-  if (device_) device_->read(data_block_);
+  if (device_) {
+    auto readed = device_->read(data_block_);
 
-  return {std::chrono::high_resolution_clock::now(), data_block_};
+    if (static_cast<int>(data_block_.size()) == readed)
+      return {std::chrono::high_resolution_clock::now(), data_block_};
+  }
+  throw BITalino::Exception(BITalino::Exception::Code::CONTACTING_DEVICE);
 }
 void srp::bitalino_reader::start(bool debug_mode) {
   if (device_) device_->start(sampling_rate_, channels_, debug_mode);
