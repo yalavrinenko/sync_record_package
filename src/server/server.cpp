@@ -1,8 +1,10 @@
 //
 // Created by yalavrinenko on 30.11.2020.
 //
-#include "../utils/logger.hpp"
+#include <utils/logger.hpp>
+#include <utils/io.hpp>
 #include "control_server.hpp"
+#include "options.pb.h"
 #include <server/controlled_collection.hpp>
 
 int main(int argc, char** argv){
@@ -11,11 +13,24 @@ int main(int argc, char** argv){
   //std::locale::global(std::locale(""));
   std::cout << "KOI test: " << " Тест поддержки кирилицы" << std::endl;
 #endif
-  srp::ControlServerOption sopt;
+
+  if (argc < 2){
+    LOGE << "No config file. Use ./sync_capture [option].json";
+    return 1;
+  }
+
+
+
+  auto sopt = srp::ProtoUtils::message_from_json<srp::ControlServerOption>(srp::IoUtils::read_json(argv[1]));
+
+  if (!sopt){
+    LOGE << "Fail to load server configuratin. Terminate.";
+    return 1;
+  }
 
   srp::control_server server(srp::control_server::connection_point{
-    .host = "",
-    .port = 14488
+    .host = sopt->host(),
+    .port = static_cast<unsigned int>(sopt->port())
   });
 
   auto collection = srp::controlled_device_collection::create_collection();
