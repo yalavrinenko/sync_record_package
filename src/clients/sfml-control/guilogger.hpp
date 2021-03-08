@@ -51,6 +51,10 @@ public:
     return ptr;
   }
 
+  void remove_logger(auto const& logger_ptr){
+    exclude_entries_.push_back(logger_ptr);
+  }
+
   void flush(){
     for (auto &e : entries_)
       e->flush();
@@ -82,6 +86,8 @@ private:
   sf::Clock delta_clock_;
   ImGuiContext* ctx_{nullptr};
   std::list<std::shared_ptr<ilogger_entry>> entries_;
+
+  std::list<ilogger_entry*> exclude_entries_;
   std::unordered_map<sf::Event::EventType, event_callback> callbacks_;
 };
 

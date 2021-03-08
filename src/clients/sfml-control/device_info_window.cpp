@@ -77,6 +77,11 @@ void gui::device_info_window::draw_impl() {
   ImGui::Separator();
   if (!info.additional_info.empty())
     key_value_print("Additional info:", info.additional_info.c_str());
+
+//  ImGui::Separator();
+//  if (ImGui::Button("X")){
+//    this->linked_factory_->remove_logger(this);
+//  }
 }
 gui::device_ui_info gui::device_info_window::current_data() {
   std::lock_guard lg{io_mutex};

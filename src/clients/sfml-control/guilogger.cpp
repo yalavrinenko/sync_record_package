@@ -45,6 +45,11 @@ void gui::logger_window::draw() {
   window_.clear();// fill background with color
   ImGui::SFML::Render(window_);
   window_.display();
+
+  if (!exclude_entries_.empty()) {
+    for (auto const &ptr : exclude_entries_) { entries_.remove_if([ptr](auto const& x) { return x.get() == ptr; }); }
+    exclude_entries_.clear();
+  }
 }
 
 void gui::logger_window::register_external_events(sf::Event::EventType event, event_callback cb) { callbacks_[event] = std::move(cb); }
