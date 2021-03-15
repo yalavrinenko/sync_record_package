@@ -56,7 +56,7 @@ std::unique_ptr<srp::ffmpeg_io_container::ffmpeg_stream> srp::ffmpeg_io_containe
 
 void srp::ffmpeg_io_container::open_exist(std::string const &source, std::string const &format) {
   if (source.empty()) {
-    find_device();
+    find_device(format);
     throw std::runtime_error("No capture device");
   }
 
@@ -109,10 +109,22 @@ srp::ffmpeg_io_container::create_stream(const srp::ffmpeg_io_container::ffmpeg_s
 
   return stream;
 }
-void srp::ffmpeg_io_container::find_device() {
+
+namespace {
+  void external_device_list(AVInputFormat* iformat){
+    LOGD << "Try to use external function....";
+    AVFormatContext *pFormatCtx = avformat_alloc_context();
+    AVDictionary* options2 = nullptr;
+    av_dict_set(&options2, "list_devices", "true", 0);
+    avformat_open_input(&pFormatCtx, nullptr, iformat, &options2);
+    avformat_free_context(pFormatCtx);
+  }
+}
+
+void srp::ffmpeg_io_container::find_device(std::string const &format) {
   LOGE << "Source line is empty. Searching capture audio device...";
-  AVInputFormat *iformat = nullptr;
-  while ((iformat = av_input_audio_device_next(iformat)) != nullptr) {
+  AVInputFormat *iformat = (format.empty()) ? av_input_audio_device_next(nullptr) : av_find_input_format(format.c_str());
+  while (iformat) {
     LOGE << boost::format("Available device for format [%1%]:") % iformat->name;
 
     AVDeviceInfoList *dev_list = nullptr;
@@ -122,6 +134,7 @@ void srp::ffmpeg_io_container::find_device() {
 
     if (ecode < 0) {
       LOGE << boost::format("Fail to get device list for format [%1%]. Reason (code %2%): %3%") % iformat->name % ecode % ffmpeg_error2str(ecode);
+      external_device_list(iformat);
       //throw std::runtime_error("avdevice_list_input_sources() call fail.");
     } else {
 
@@ -136,6 +149,7 @@ void srp::ffmpeg_io_container::find_device() {
 
       avdevice_free_list_devices(&dev_list);
     }
+    iformat = av_input_audio_device_next(iformat);
   }
 }
 
