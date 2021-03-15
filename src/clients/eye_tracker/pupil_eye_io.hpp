@@ -17,7 +17,7 @@ namespace srp {
     [[nodiscard]] std::string name() const;
     [[nodiscard]] std::chrono::milliseconds timestamp() const;
 
-    std::filesystem::path start_recording(std::filesystem::path const& path);
+    std::string start_recording(std::filesystem::path const& path);
 
     std::chrono::milliseconds stop_recording();
 

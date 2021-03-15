@@ -221,7 +221,7 @@ auto srp::bitalino_instance::bitalino_io::check_device() {
 auto srp::bitalino_instance::bitalino_io::start_recording(const std::filesystem::path &path_template, std::string const& dev_id) {
   auto [output_path, stamp_path] = srp::PathUtils::create_file_path(opt_.root(), path_template, dev_id, opt_.filetype());
 
-  io_ = init_io_block(output_path, stamp_path);
+  io_ = init_io_block(output_path.generic_string(), stamp_path.generic_string());
 
   io_->record_thread = std::async(std::launch::async, [this]() {
     io_->is_recording = true;
@@ -290,8 +290,8 @@ std::optional<srp::ClientCheckResponse> srp::bitalino_instance::check() {
 std::optional<srp::ClientStartRecordResponse> srp::bitalino_instance::start_recording(const std::string &path_template) {
   ClientStartRecordResponse r;
   auto [output, stamp] = device_->start_recording(path_template, std::to_string(uid()));
-  r.add_data_path(output);
-  r.add_sync_point_path(output);
+  r.add_data_path(output.generic_string());
+  r.add_sync_point_path(output.generic_string());
 
   return r;
 }
