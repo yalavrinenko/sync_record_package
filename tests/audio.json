@@ -2,8 +2,8 @@
   "tag": "audio",
   "options": {
     "@type": "type.googleapis.com/srp.AudioCaptureOptions",
-    "device": "plughw:0,0",
-    "iformat": "alsa",
+    "device": "alsa_input.pci-0000_00_1f.3.analog-stereo",
+    "iformat": "pulse",
     "input_stream_index": 0,
     "filetype": "wav",
     "root": "/home/yalavrinenko/Files/git/sync_record_package/tests/output",
