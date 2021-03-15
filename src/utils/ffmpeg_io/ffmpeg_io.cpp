@@ -56,7 +56,7 @@ std::unique_ptr<srp::ffmpeg_io_container::ffmpeg_stream> srp::ffmpeg_io_containe
 
 void srp::ffmpeg_io_container::open_exist(std::string const &source, std::string const &format) {
   if (source.empty()) {
-    find_device(format);
+    find_device();
     throw std::runtime_error("No capture device");
   }
 
@@ -109,30 +109,34 @@ srp::ffmpeg_io_container::create_stream(const srp::ffmpeg_io_container::ffmpeg_s
 
   return stream;
 }
-void srp::ffmpeg_io_container::find_device(const std::string &format) {
-  LOGE << boost::format("Source line is empty. Available device for format [%1%]:") % format;
-  AVInputFormat *iformat = av_find_input_format(format.c_str());
+void srp::ffmpeg_io_container::find_device() {
+  LOGE << "Source line is empty. Searching capture audio device...";
+  AVInputFormat *iformat = nullptr;
+  while ((iformat = av_input_audio_device_next(iformat)) != nullptr) {
+    LOGE << boost::format("Available device for format [%1%]:") % iformat->name;
 
-  AVDeviceInfoList *dev_list = nullptr;
-  AVDictionary *opt = nullptr;
+    AVDeviceInfoList *dev_list = nullptr;
+    AVDictionary *opt = nullptr;
 
-  auto ecode = avdevice_list_input_sources(iformat, nullptr, opt, &dev_list);
+    auto ecode = avdevice_list_input_sources(iformat, nullptr, opt, &dev_list);
 
-  if (ecode < 0){
-    LOGE << boost::format("Fail to get device list for format [%1%]. Reason (code %2%): %3%") % format % ecode % ffmpeg_error2str(ecode);
-    throw std::runtime_error("avdevice_list_input_sources() call fail.");
+    if (ecode < 0) {
+      LOGE << boost::format("Fail to get device list for format [%1%]. Reason (code %2%): %3%") % iformat->name % ecode % ffmpeg_error2str(ecode);
+      //throw std::runtime_error("avdevice_list_input_sources() call fail.");
+    } else {
+
+      std::ostringstream oss;
+      oss << boost::format("Find %1% devices. Detail:\n\t#\t[Device Name]\t\"Human friendly name\"\n") % dev_list->nb_devices;
+
+      for (std::weakly_incrementable auto const &i : std::views::iota(0, dev_list->nb_devices)) {
+        oss << "\t" << i << "\t[" << dev_list->devices[i]->device_name << "]\t\"" << dev_list->devices[i]->device_description << "\"\n";
+      }
+
+      LOGD << oss.str();
+
+      avdevice_free_list_devices(&dev_list);
+    }
   }
-
-  std::ostringstream oss;
-  oss << boost::format ("Find %1% devices. Detail:\n\t#\t[Device Name]\t\"Human friendly name\"\n") % dev_list->nb_devices;
-
-  for (std::weakly_incrementable auto const &i : std::views::iota(0, dev_list->nb_devices)){
-    oss << "\t" << i << "\t[" << dev_list->devices[i]->device_name << "]\t\"" << dev_list->devices[i]->device_description << "\"\n";
-  }
-
-  LOGD << oss.str();
-
-  avdevice_free_list_devices(&dev_list);
 }
 
 srp::ffmpeg_io_container::ffmpeg_stream::ffmpeg_stream(AVFormatContext *linked_context, AVStream *linked_stream, size_t stream_index)
