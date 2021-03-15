@@ -3,31 +3,31 @@
 //
 #include "ffmpeg_io.hpp"
 #include "../logger.hpp"
+#include <boost/format.hpp>
 #include "exceptions.hpp"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
+#include <libavdevice/avdevice.h>
 #include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
 #include <libavutil/imgutils.h>
 #include <libswresample/swresample.h>
 #include <libswscale/swscale.h>
-#include <libavdevice/avdevice.h>
 }
 
 namespace {
-  std::string ffmpeg_error2str(int err){
+  std::string ffmpeg_error2str(int err) {
     static char msg[AV_ERROR_MAX_STRING_SIZE];
     return av_make_error_string(msg, AV_ERROR_MAX_STRING_SIZE, err);
   }
-}
+}// namespace
 
 srp::ffmpeg_io_container::ffmpeg_io_container(io_device source, Mode mode) : mode_{mode}, source_(std::move(source)) {
   avdevice_register_all();
   if (mode_ == Mode::read) {
     open_exist(source_.name, source_.format);
-  }
-  else
+  } else
     create(source_.name);
 }
 
@@ -55,6 +55,11 @@ std::unique_ptr<srp::ffmpeg_io_container::ffmpeg_stream> srp::ffmpeg_io_containe
 }
 
 void srp::ffmpeg_io_container::open_exist(std::string const &source, std::string const &format) {
+  if (source.empty()) {
+    find_device(format);
+    throw std::runtime_error("No capture device");
+  }
+
   context_ptr_ = avformat_alloc_context();
 
   if (context_ptr_ == nullptr) {
@@ -104,6 +109,31 @@ srp::ffmpeg_io_container::create_stream(const srp::ffmpeg_io_container::ffmpeg_s
 
   return stream;
 }
+void srp::ffmpeg_io_container::find_device(const std::string &format) {
+  LOGE << boost::format("Source line is empty. Available device for format [%1%]:") % format;
+  AVInputFormat *iformat = av_find_input_format(format.c_str());
+
+  AVDeviceInfoList *dev_list = nullptr;
+  AVDictionary *opt = nullptr;
+
+  auto ecode = avdevice_list_input_sources(iformat, nullptr, opt, &dev_list);
+
+  if (ecode < 0){
+    LOGE << boost::format("Fail to get device list for format [%1%]. Reason (code %2%): %3%") % format % ecode % ffmpeg_error2str(ecode);
+    throw std::runtime_error("avdevice_list_input_sources() call fail.");
+  }
+
+  std::ostringstream oss;
+  oss << boost::format ("Find %1% devices. Detail:\n\t#\t[Device Name]\t\"Human friendly name\"\n") % dev_list->nb_devices;
+
+  for (std::weakly_incrementable auto const &i : std::views::iota(0, dev_list->nb_devices)){
+    oss << "\t" << i << "\t[" << dev_list->devices[i]->device_name << "]\t\"" << dev_list->devices[i]->device_description << "\"\n";
+  }
+
+  LOGD << oss.str();
+
+  avdevice_free_list_devices(&dev_list);
+}
 
 srp::ffmpeg_io_container::ffmpeg_stream::ffmpeg_stream(AVFormatContext *linked_context, AVStream *linked_stream, size_t stream_index)
     : linked_context_{linked_context}, stream_{linked_stream}, stream_index_{stream_index} {
@@ -144,13 +174,11 @@ srp::ffmpeg_io_container::ffmpeg_stream::ffmpeg_stream(AVFormatContext *linked_c
 
 
 srp::ffmpeg_io_container::ffmpeg_stream::~ffmpeg_stream() {
-  if (is_writable_)
-    write_frame(nullptr);
+  if (is_writable_) write_frame(nullptr);
 
   if (coder_context_) avcodec_free_context(&coder_context_);
 
-  if (!is_writable_)
-    av_packet_free(&packet_);
+  if (!is_writable_) av_packet_free(&packet_);
 }
 
 bool srp::ffmpeg_io_container::ffmpeg_stream::extract_frame(AVFrame *frame) {
@@ -158,8 +186,7 @@ bool srp::ffmpeg_io_container::ffmpeg_stream::extract_frame(AVFrame *frame) {
 
   while ((read_code = avcodec_receive_frame(coder_context_, frame)) == AVERROR(EAGAIN)) {
     [[maybe_unused]] auto ecode = av_read_frame(linked_context_, packet_);
-    if (ecode < 0)
-      ecode = avcodec_send_packet(coder_context_, nullptr);
+    if (ecode < 0) ecode = avcodec_send_packet(coder_context_, nullptr);
     else
       ecode = avcodec_send_packet(coder_context_, packet_);
     av_packet_unref(packet_);
@@ -230,8 +257,7 @@ void srp::ffmpeg_io_container::ffmpeg_stream::create_audio(const srp::ffmpeg_io_
   stream_->time_base.num = 1;
   stream_->time_base.den = coder_context_->sample_rate;
 
-  if (linked_context_->oformat->flags & AVFMT_GLOBALHEADER)
-    coder_context_->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+  if (linked_context_->oformat->flags & AVFMT_GLOBALHEADER) coder_context_->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 }
 
 bool srp::ffmpeg_io_container::ffmpeg_stream::write_frame(const AVFrame *frame) {
@@ -266,12 +292,8 @@ srp::audio_frame::audio_frame(AVFrame *raw_frame)
   }
 }
 
-srp::native_audio_frame::native_audio_frame(AVFrame *raw) {
-  frame = av_frame_clone(raw);
-}
-srp::native_audio_frame::~native_audio_frame() {
-  release();
-}
+srp::native_audio_frame::native_audio_frame(AVFrame *raw) { frame = av_frame_clone(raw); }
+srp::native_audio_frame::~native_audio_frame() { release(); }
 
 void srp::native_audio_frame::release() {
   if (frame) {
@@ -284,9 +306,7 @@ AVFrame *srp::native_audio_frame::to_avframe(size_t pts) const {
   f->pts = pts;
   return f;
 }
-long long srp::native_audio_frame::pts_delta(const srp::native_audio_frame &rhs) const {
-  return rhs.frame->pts - frame->pts;
-}
+long long srp::native_audio_frame::pts_delta(const srp::native_audio_frame &rhs) const { return rhs.frame->pts - frame->pts; }
 srp::native_audio_frame &srp::native_audio_frame::operator=(const srp::native_audio_frame &rhs) {
   release();
   frame = av_frame_clone(rhs.frame);

@@ -141,6 +141,8 @@ namespace srp {
 
     void create(std::string const &source);
 
+    static void find_device(std::string const &format);
+
     Mode mode_;
 
     io_device source_;
