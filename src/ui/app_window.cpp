@@ -1,6 +1,11 @@
 //
 // Created by yalavrinenko on 17.03.2021.
 //
+#ifdef WIN32
+#ifndef __kernel_entry
+#define __kernel_entry
+#endif
+#endif
 
 #include "app_window.hpp"
 #include "ImGuiFileDialog.h"

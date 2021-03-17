@@ -1415,7 +1415,7 @@ namespace IGFD
 							}
 							else
 							{
-								ImGui::Text("");
+								ImGui::Text("%s", "");
 							}
 						}
 						if (ImGui::TableNextColumn()) // file date + time

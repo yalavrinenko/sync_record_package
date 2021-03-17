@@ -5,7 +5,7 @@
 
 int main(int argc, char** argv){
   auto gui_factory = gui::logger_environment::create();
-  auto main_window = gui_factory->create_logger("Application Launcher", std::pair{1920, 1080});
+  auto main_window = gui_factory->create_logger("Application Launcher", std::pair{1920, 1000});
 
   main_window->create_logger<gui::gui_controls>("Main commands")->add_control<srp::app_runner>(main_window);
 

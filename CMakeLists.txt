@@ -94,7 +94,9 @@ add_executable(app_launcher src/ui/app_launcher_ui.cpp src/ui/app_runner.cpp
         src/ui/ImGuiFileDialog.cpp)
 target_link_libraries(app_launcher ui_control Boost::log Boost::log_setup Boost::thread Boost::system)
 target_compile_definitions(app_launcher PUBLIC "-DBOOST_ALL_DYN_LINK -DBOOST_LOG_USE_CHAR")
-
+if (WIN32)
+    target_link_libraries(app_launcher ws2_32)
+endif()
 function(create_test_set test_name source_file required_libs)
     add_executable(${test_name} ${source_file})
     target_link_libraries(${test_name} ${SERVER_TARGET_LIB} Boost::unit_test_framework ${required_libs})
