@@ -89,6 +89,11 @@ add_executable(control_client ${CLIENT_OPTION_PROTO_SRCS} src/clients/control.cp
 target_link_libraries(control_client ui_control ${CLIENT_COMMON_LIB} Boost::log Boost::log_setup Boost::thread Boost::system)
 target_compile_definitions(control_client PUBLIC "-DBOOST_ALL_DYN_LINK -DBOOST_LOG_USE_CHAR")
 
+add_executable(app_launcher src/ui/app_launcher_ui.cpp src/ui/app_runner.cpp
+        src/ui/app_runner.hpp src/ui/app_window.cpp src/ui/app_window.hpp
+        src/ui/ImGuiFileDialog.cpp)
+target_link_libraries(app_launcher ui_control Boost::log Boost::log_setup Boost::thread Boost::system)
+target_compile_definitions(app_launcher PUBLIC "-DBOOST_ALL_DYN_LINK -DBOOST_LOG_USE_CHAR")
 
 function(create_test_set test_name source_file required_libs)
     add_executable(${test_name} ${source_file})

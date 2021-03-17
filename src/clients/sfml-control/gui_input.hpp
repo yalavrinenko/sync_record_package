@@ -20,6 +20,8 @@ namespace gui {
     using getter_t = std::function<return_type(icontrol &)>;
 
     virtual void draw() = 0;
+
+    virtual ~icontrol() = default;
   };
 
   class gui_controls : public ilogger_entry {
