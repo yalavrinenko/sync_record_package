@@ -10,28 +10,32 @@
 #include <boost/asio.hpp>
 
 namespace gui {
-  struct ConfigSelector{
-    static auto& default_path() {
-      static std::filesystem::path path{"."};
-      return path;
-    }
-  };
+  using on_close_t = std::function<void(ilogger_entry*)>;
 
   class app_window: public icontrol {
   public:
-    explicit app_window(std::filesystem::path bin);
+    explicit app_window(std::filesystem::path bin, std::filesystem::path json, on_close_t = nullptr);
 
     void draw() override;
 
-    ~app_window();
+    [[nodiscard]] auto is_running() const { return is_started_; }
+
+    void link_window(auto *window) { linked_window_ = window; }
+
+    ~app_window() override;
   private:
     class app_instance;
 
     std::unique_ptr<app_instance> app_;
 
     std::filesystem::path runner_;
+    std::filesystem::path json_;
 
     bool is_started_ = false;
+
+    float last_scroll_position_ = 0.f;
+    on_close_t on_close_;
+    gui::ilogger_entry* linked_window_ = nullptr;
   };
 }
 

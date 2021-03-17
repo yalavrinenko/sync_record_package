@@ -15,6 +15,9 @@ void gui::gui_controls::draw_impl() {
     control_ptr->draw();
   }
 }
+ImGuiWindowFlags_ gui::gui_controls::window_flags() const { return static_cast<ImGuiWindowFlags_>(flags_); }
+
+ImVec2 gui::gui_controls::window_size() const { return size_; }
 
 void gui::angle_control::draw() {
   if (value_getter_)

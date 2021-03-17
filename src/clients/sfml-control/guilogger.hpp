@@ -24,6 +24,14 @@ public:
   virtual void draw();
   virtual void flush() = 0;
 
+  [[nodiscard]] virtual ImGuiWindowFlags_ window_flags() const {
+    return ImGuiWindowFlags_None;
+  }
+
+  [[nodiscard]] virtual ImVec2 window_size() const {
+    return {0, 0};
+  }
+
   std::shared_ptr<class logger_window>& factory() { return linked_factory_; }
 
   virtual ~ilogger_entry() = default;
@@ -36,8 +44,8 @@ protected:
 
 class logger_window: public std::enable_shared_from_this<logger_window> {
 public:
-  static std::shared_ptr<logger_window> create(std::string name="") {
-    return std::shared_ptr<logger_window>(new logger_window(std::move(name)));
+  static std::shared_ptr<logger_window> create(std::string name="", std::pair<int, int> const& size={1378, 850}) {
+    return std::shared_ptr<logger_window>(new logger_window(std::move(name), size));
   }
 
   void draw();
@@ -65,9 +73,9 @@ public:
 
   ~logger_window();
 protected:
-  explicit logger_window(std::string name)
+  explicit logger_window(std::string name, std::pair<int, int> const& size={1378, 850})
       : window_title_{std::move(name)},
-        window_(sf::VideoMode(1378, 850), window_title_) {
+        window_(sf::VideoMode(size.first, size.second), window_title_) {
     init_window();
   }
 
@@ -100,8 +108,8 @@ public:
     return factory;
   }
 
-  std::shared_ptr<logger_window> create_logger(std::string name) {
-    windows_.emplace_back(logger_window::create(std::move(name)));
+  std::shared_ptr<logger_window> create_logger(std::string name, std::pair<int, int> const& size={1378, 850}) {
+    windows_.emplace_back(logger_window::create(std::move(name), size));
     return windows_.back();
   }
 

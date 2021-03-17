@@ -41,9 +41,17 @@ namespace gui {
     void flush() override;
 
     void draw_impl() override;
+    [[nodiscard]] ImGuiWindowFlags_ window_flags() const override;
+    [[nodiscard]] ImVec2 window_size() const override;
+
+    void set_size(ImVec2 const& size) { size_ = size; }
+    void set_flags(int flags) { flags_ = flags; }
 
   protected:
     std::vector<std::shared_ptr<icontrol>> controls_;
+
+    ImVec2 size_{0, 0};
+    int flags_ = ImGuiWindowFlags_None;
   };
 
   class button_control : public icontrol {

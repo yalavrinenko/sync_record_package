@@ -8,6 +8,7 @@
 
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
+#include <utils/logger.hpp>
 
 ImGuiContext *create_imgui_context() {
   static auto *atlas = new ImFontAtlas();
@@ -60,6 +61,13 @@ void gui::logger_window::events() {
     ImGui::SFML::ProcessEvent(event);
 
     if (event.type == sf::Event::Closed) {
+      try {
+        entries_.clear();
+      }
+      catch (std::exception &e){
+        LOGE << "Exception during clear windows. Reason: " << e.what();
+      }
+
       window_.close();
       call_callback(event.type);
       std::exit(0);
@@ -74,7 +82,9 @@ void gui::ilogger_entry::draw() {
     ImGui::SetNextWindowSize({400, 420}, ImGuiCond_FirstUseEver); //ImGuiCond_FirstUseEver
   }
 
-  ImGui::Begin(name_.c_str());
+  ImGui::SetNextWindowSize(window_size());
+
+  ImGui::Begin(name_.c_str(), nullptr, window_flags());
   draw_impl();
   ImGui::End();
 }
