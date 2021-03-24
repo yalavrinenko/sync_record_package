@@ -115,7 +115,7 @@ private:
         oss << digit << "\t";
 
       for (auto const &achannel : opt_.channels())
-        oss << frame.analog[achannel] << "\t";
+        oss << frame.analog[achannel - 1] << "\t";
 
       oss << "\n";
     }

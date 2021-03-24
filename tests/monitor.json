@@ -1,7 +1,7 @@
 {
   "role": "monitor",
   "server": {
-    "host": "127.0.0.1",
+    "host": "192.168.50.178",
     "port": 14488
   },
   "record_path_template": "demonstration",
